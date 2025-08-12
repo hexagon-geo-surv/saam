@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Leica Geosystems AG
+#
+# SPDX-License-Identifier: MIT
+
+---
+BasedOnStyle: Microsoft   
+---
+Language: Cpp
+Standard: c++20
+
+QualifierAlignment: Left
+
+# Line break limit in characters
+ColumnLimit: 140
+
+AlwaysBreakTemplateDeclarations: Yes
+BreakConstructorInitializers: BeforeComma
+FixNamespaceComments: Yes
+SpacesBeforeTrailingComments: 2
+InsertNewlineAtEOF: true
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: Align

@@ -1,0 +1,18 @@
+// SPDX-FileCopyrightText: Leica Geosystems AG
+//
+// SPDX-License-Identifier: MIT
+
+#pragma once
+
+#include <cstddef>
+
+namespace saam
+{
+    class version
+    {
+    public:
+        static std::size_t major() { return @PROJECT_VERSION_MAJOR@; }
+        static std::size_t minor() { return @PROJECT_VERSION_MINOR@; }
+        static std::size_t patch() { return @PROJECT_VERSION_PATCH@; }
+    };
+}

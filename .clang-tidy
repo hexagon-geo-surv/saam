@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Leica Geosystems AG
+#
+# SPDX-License-Identifier: MIT
+
+Checks: "-*,readability-*,cppcoreguidelines-*,modernize-*,performance-*,misc-*,hicpp-*,concurrecy-*,bugprone-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-misc-non-private-member-variables-in-classes,-modernize-use-trailing-return-type"
+CheckOptions:
+  - { key: readability-identifier-naming.ClassCase, value: lower_case }
+  - { key: readability-identifier-naming.ClassMemberCase, value: lower_case }
+  - { key: readability-identifier-naming.ClassMemberPrefix, value: _ }
+  - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
+
+  - { key: readability-identifier-naming.EnumCase, value: lower_case }
+  - { key: readability-identifier-naming.EnumConstantCase, value: lower_case }
+
+  - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
+
+  - { key: readability-identifier-naming.StructCase, value: lower_case }
+
+  - { key: readability-identifier-naming.TypedefCase, value: lower_case }
+  - { key: readability-identifier-naming.TypeAliasCase, value: lower_case }
+  
+  - { key: readability-identifier-naming.UnionCase, value: lower_case }
+
+  - { key: readability-identifier-naming.FunctionCase, value: lower_case }
+  - { key: readability-identifier-naming.ParameterCase, value: lower_case }
+  - { key: readability-identifier-naming.GlobalFunctionCase, value: lower_case }
+
+  - { key: readability-identifier-naming.LocalConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.ConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.ConstexprVariable, value: lower_case }
+  - { key: readability-identifier-naming.LocalVariableCase, value: lower_case }
+
+
+  - { key: readability-identifier-naming.GlobalVariableCase, value: lower_case }
+  - { key: readability-identifier-naming.GlobalConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.StaticConstantCase, value: lower_case }
+  - { key: readability-identifier-naming.StaticVariableCase, value: lower_case }
+
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+
+  - { key: readability-identifier-naming.TemplateParamter, value: CamelCase }
+  - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
+WarningsAsErrors: ""
+HeaderFilterRegex: "saam/.*"
+FormatStyle: none

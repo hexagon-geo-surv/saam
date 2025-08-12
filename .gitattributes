@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Leica Geosystems AG
+#
+# SPDX-License-Identifier: MIT
+
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto eol=lf
+
+# conanfile.py is working bad with crlf
+conanfile.py text eol=lf

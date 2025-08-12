@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Leica Geosystems AG
+#
+# SPDX-License-Identifier: MIT
+
+*
+!include
+!include/**
+
+!src
+!src/**
+
+!.clang-format
+!.clang-tidy
+!.gitattributes
+!.gitignore
+!CMakeLists.txt
+!conanfile.py
