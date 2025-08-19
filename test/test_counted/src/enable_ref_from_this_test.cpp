@@ -4,6 +4,7 @@
 
 #include <saam/enable_ref_from_this.hpp>
 #include <saam/var.hpp>
+#include <saam/ref.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

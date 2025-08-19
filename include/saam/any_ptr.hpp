@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <saam/var.hpp>
+#include <saam/ref.hpp>
 
 #include <functional>
 #include <memory>

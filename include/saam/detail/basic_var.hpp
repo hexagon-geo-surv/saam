@@ -4,46 +4,45 @@
 
 #pragma once
 
+#include <saam/detail/basic_ref.hpp>
+#include <saam/detail/borrow_manager.hpp>
 #include <saam/detail/constructor_destructor_traits.hpp>
-#include <saam/detail/counted_ref/detail/borrow_counter.hpp>
-#include <saam/detail/counted_ref/ref.hpp>
 
-#include <sstream>
 #include <type_traits>
 #include <utility>
 
 namespace saam
 {
 
-template <class T>
-class enable_ref_from_this;
+template <class T, borrow_manager TBorrowManager>
+class basic_enable_ref_from_this;
 
-template <class T>
-class var
+template <class T, borrow_manager TBorrowManager>
+class basic_var
 {
   public:
-    var()
+    basic_var()
     {
         configure_enable_ref_from_this();
         call_post_constructor();
     }
 
     template <typename... Args>
-    explicit var(std::in_place_t, Args &&...args)
+    explicit basic_var(std::in_place_t, Args &&...args)
         : instance_(std::forward<Args>(args)...)
     {
         configure_enable_ref_from_this();
         call_post_constructor();
     }
 
-    explicit var(const T &instance)
+    explicit basic_var(const T &instance)
         : instance_(instance)
     {
         configure_enable_ref_from_this();
         call_post_constructor();
     }
 
-    explicit var(T &&instance)
+    explicit basic_var(T &&instance)
         : instance_(std::move(instance))
     {
         configure_enable_ref_from_this();
@@ -51,21 +50,21 @@ class var
     }
 
     // No conversion copy constructor, because of the slicing of T - only the base class would be copied
-    var(const var &other)
-        : var(other.instance_)
+    basic_var(const basic_var &other)
+        : basic_var(other.instance_)
     {
         // Just take the other instance, reference counters of "this" and "other" are independent
     }
 
     // No conversion move constructor, because of the slicing of T - only the base class would be copied
-    var(var &&other) noexcept
-        : var(std::move(other.instance_))
+    basic_var(basic_var &&other) noexcept
+        : basic_var(std::move(other.instance_))
     {
         // Just take the other instance, reference counters of "this" and "other" are independent
     }
 
     // No conversion copy assignment, because of the slicing of T - only the base class would be copied
-    var &operator=(const var &other) noexcept
+    basic_var &operator=(const basic_var &other) noexcept
     {
         if (this == &other)
         {
@@ -79,7 +78,7 @@ class var
     }
 
     // No conversion move assignment, because of the slicing of T - only the base class would be copied
-    var &operator=(var &&other) noexcept
+    basic_var &operator=(basic_var &&other) noexcept
     {
         if (this == &other)
         {
@@ -92,30 +91,22 @@ class var
         return *this;
     }
 
-    ~var()
+    ~basic_var()
     {
         // Pre-destructor offers the possibility to do cleanup before the owned object is destroyed.
         // It is a great place to revoke callbacks that contain self references.
         call_pre_destructor();
 
         // Before destroying the owned object, we need to check if there are any active references
-        // The desctruction of the owned object cannot be done before the referenc check,
+        // The desctruction of the owned object cannot be done before the reference check,
         // because it would allow a data race between a thread inside the owned object and the destructor of the owned object.
-
-        const bool destroying_with_active_references = !borrow_counter_.close_counting();
-        if (destroying_with_active_references)
-        {
-            std::ostringstream panic_message;
-            panic_message << "Borrow checked variable of type <" << typeid(T).name() << "> destroyed with " << borrow_counter_.count()
-                          << " active reference(s).\n";
-            global_panic_handler.trigger_panic(panic_message.str());
-        }
+        borrow_manager_.verify_dangling_references(typeid(T));
     }
 
     // Borrowing is a const operation, because borrowing just provides access to the underlying object - does not change the manager
-    [[nodiscard]] ref<T> borrow() const noexcept
+    [[nodiscard]] basic_ref<T, TBorrowManager> borrow() const noexcept
     {
-        return ref<T>(const_cast<var *>(this)->instance_, borrow_counter_);
+        return basic_ref<T, TBorrowManager>(const_cast<basic_var *>(this)->instance_, borrow_manager_);
     }
 
     // No direct casting to raw reference is allowed
@@ -132,7 +123,7 @@ class var
 
     void configure_enable_ref_from_this()
     {
-        if constexpr (std::is_base_of_v<enable_ref_from_this<T>, T>)
+        if constexpr (std::is_base_of_v<basic_enable_ref_from_this<T, TBorrowManager>, T>)
         {
             instance_.smart_variable(this);
         }
@@ -146,39 +137,32 @@ class var
         }
     }
 
-    template <typename TVar>
-    friend class var;
+    template <typename TOther, borrow_manager TOtherBorrowManager>
+    friend class basic_var;
 
-    template <typename TRef>
-    friend class ref;
+    template <typename TOther, borrow_manager TOtherBorrowManager>
+    friend class basic_ref;
 
-    mutable borrow_counter borrow_counter_;
+    mutable TBorrowManager borrow_manager_;
     T instance_;
 };
 
-template <typename T>
-template <typename TVar>
-    requires std::is_convertible_v<TVar *, T *>
-ref<T>::ref(const var<TVar> &other) noexcept
-    : ref(const_cast<var<TVar> &>(other).instance_, const_cast<var<TVar> &>(other).borrow_counter_)
+template <typename T, borrow_manager TBorrowManager>
+template <typename TOther>
+    requires std::is_convertible_v<TOther *, T *>
+basic_ref<T, TBorrowManager>::basic_ref(const basic_var<TOther, TBorrowManager> &other) noexcept
+    : basic_ref(const_cast<basic_var<TOther, TBorrowManager> &>(other).instance_,
+                const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_)
 {
 }
 
-template <typename T>
-template <typename TVar>
-    requires std::is_convertible_v<TVar *, T *>
-ref<T> &ref<T>::operator=(const var<TVar> &other) noexcept
+template <typename T, borrow_manager TBorrowManager>
+template <typename TOther>
+    requires std::is_convertible_v<TOther *, T *>
+basic_ref<T, TBorrowManager> &basic_ref<T, TBorrowManager>::operator=(const basic_var<TOther, TBorrowManager> &other) noexcept
 {
-    const bool references_already_the_var = borrow_counter_ == &other.borrow_counter_;
-    if (references_already_the_var)
-    {
-        return *this;
-    }
-
-    unregister_at_counter();
-    borrow_counter_ = &other.borrow_counter_;
-    register_at_counter();
-    instance_ = &(const_cast<TVar &>(other.instance_));
+    operator=(basic_ref(const_cast<basic_var<TOther, TBorrowManager> &>(other).instance_,
+                        const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_));
 
     return *this;
 }

@@ -4,49 +4,49 @@
 
 #pragma once
 
-#include <saam/detail/counted_ref/var.hpp>
+#include <saam/detail/basic_var.hpp>
 #include <saam/panic.hpp>
 
 namespace saam
 {
 
-template <class T>
-class enable_ref_from_this
+template <class T, borrow_manager TRefManager>
+class basic_enable_ref_from_this
 {
   public:
-    enable_ref_from_this() = default;
+    basic_enable_ref_from_this() = default;
 
     // Copy/move constructors only change the internal variable, but have no affect on the reference counting.
-    enable_ref_from_this(const enable_ref_from_this &other) {};
-    enable_ref_from_this(enable_ref_from_this &&other) noexcept {};
+    basic_enable_ref_from_this(const basic_enable_ref_from_this &other) {};
+    basic_enable_ref_from_this(basic_enable_ref_from_this &&other) noexcept {};
 
     // Copy/move assignment only change the internal variable, but have no affect on the reference counting.
-    enable_ref_from_this &operator=(const enable_ref_from_this &other)
+    basic_enable_ref_from_this &operator=(const basic_enable_ref_from_this &other)
     {
         return *this;
     };
-    enable_ref_from_this &operator=(enable_ref_from_this &&other) noexcept
+    basic_enable_ref_from_this &operator=(basic_enable_ref_from_this &&other) noexcept
     {
         return *this;
     };
 
-    ~enable_ref_from_this() = default;
+    ~basic_enable_ref_from_this() = default;
 
     // Mutable borrow
-    [[nodiscard]] ref<T> borrow_from_this()
+    [[nodiscard]] basic_ref<T, TRefManager> borrow_from_this()
     {
         assert_that(manager_, "enable_ref_from_this: no var available");
         return {*manager_};
     }
 
     // Immutable borrow
-    [[nodiscard]] ref<const T> borrow_from_this() const
+    [[nodiscard]] basic_ref<const T, TRefManager> borrow_from_this() const
     {
         assert_that(manager_, "enable_ref_from_this: no var available");
         return {*manager_};
     }
 
-    void smart_variable(var<T> *manager)
+    void smart_variable(basic_var<T, TRefManager> *manager)
     {
         manager_ = manager;
     }
@@ -55,7 +55,7 @@ class enable_ref_from_this
     // Does not store a smart reference, it would make the var non destroyable.
     // Instead, it knows its owner var, so it can create a reference any time
     // without having one.
-    var<T> *manager_ = nullptr;
+    basic_var<T, TRefManager> *manager_ = nullptr;
 };
 
 }  // namespace saam
