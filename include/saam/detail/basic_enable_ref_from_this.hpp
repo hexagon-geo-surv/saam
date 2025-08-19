@@ -21,14 +21,15 @@ class basic_enable_ref_from_this
     basic_enable_ref_from_this(basic_enable_ref_from_this &&other) noexcept {};
 
     // Copy/move assignment only change the internal variable, but have no affect on the reference counting.
-    basic_enable_ref_from_this &operator=(const basic_enable_ref_from_this &other)
+    basic_enable_ref_from_this &operator=(const basic_enable_ref_from_this & /*other*/)
     {
         return *this;
-    };
-    basic_enable_ref_from_this &operator=(basic_enable_ref_from_this &&other) noexcept
+    }
+
+    basic_enable_ref_from_this &operator=(basic_enable_ref_from_this && /*other*/) noexcept
     {
         return *this;
-    };
+    }
 
     ~basic_enable_ref_from_this() = default;
 
