@@ -150,7 +150,7 @@ auto name = std::make_unique<saam::var<std::string>>("Hello World");
 
 <img src="Heap-unique.svg" alt="Stack" style="width:70%;" />
 
-## Borrow Checking detected errors
+## Detected errors
 
 The following snippet demonstrates returning a reference to an object that is destroyed on function exit.
 The compiler often warns about this trivial case but does not necessarily report an error.
@@ -169,11 +169,11 @@ auto generated_text = generate_text();
 Another scenario is when the reference is created earlier than the variable. As the scope ends, the variable is destroyed earlier than the reference.
 
 ```cpp
-saam::ref<const std::string> text_ref;
+std::optional<saam::ref<const std::string>> maybe_text_ref;
 
 saam::var<std::string> text{std::in_place, "hello"};
 
-text_ref = text;
+maybe_text_ref = text;
 ```
 
 Another classical example from Rust. The container internal buffer maybe reallocated when a new element is pushed into the container.
@@ -201,7 +201,7 @@ Smart references are casted similar to the regular references.
 Upcasting (derived type to base type) is always possible and it is implicit.
 
 ```cpp
-saam::ref<derived> derived_ref;
+saam::ref<derived> derived_ref = ......;
 saam::ref<base> base_ref = derived_ref;
 ```
 
@@ -459,7 +459,7 @@ saam::sentinel<const int> locked_number_immut = number;
 value_changed.wait(locked_number_immut, [](const int &val) { return val > 5; });
 
 // waiting has finished, the sentinel is locked again, and it is safe to access the variable
-print(*number);
+print(*locked_number_immut);
 ```
 
 Waiting works with both immutable (see above) and mutable sentinels.
@@ -470,7 +470,7 @@ saam::sentinel<int> locked_number_mut = number;
 value_changed.wait(locked_number_mut, [](const int &val) { return val > 5; });
 
 // mutable sentinel allows modifications
-*number = 10;
+*locked_number_mut = 10;
 ```
 
 The waiting time can be limited on the wait function.

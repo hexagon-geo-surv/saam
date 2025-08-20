@@ -58,6 +58,16 @@ TEST_F(unchecked_borrow_test, parallel_borrow)
     ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
+TEST_F(unchecked_borrow_test, nullable_ref)
+{
+    saam::var<std::string> text(std::in_place, "Hello world");
+
+    std::optional<saam::ref<std::string>> maybe_text_ref = text;
+
+    ASSERT_TRUE(maybe_text_ref);
+    ASSERT_EQ(maybe_text_ref.value()->at(0), 'H');
+}
+
 TEST_F(unchecked_borrow_test, var_implicit_borrow)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
