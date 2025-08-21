@@ -16,8 +16,32 @@
 #define SAAM_BORROW_CHECKING_MODE @SAAM_BORROW_CHECKING_MODE_CMAKE@
 #endif
 
-#if SAAM_BORROW_CHECKING_MODE == TRACKED
-    #if !defined(__cpp_lib_stacktrace) || __cpp_lib_stacktrace < 202011L
-        #error "<stacktrace> support is needed for tracked mode"
-    #endif
+#if SAAM_BORROW_CHECKING_MODE == COUNTED
+
+#include <saam/detail/counted_borrow_manager.hpp>
+namespace saam
+{
+using current_borrow_manager_t = counted_borrow_manager;
+}
+
+#elif SAAM_BORROW_CHECKING_MODE == TRACKED
+
+#if !defined(__cpp_lib_stacktrace) || __cpp_lib_stacktrace < 202011L
+    #error "<stacktrace> support is needed for tracked mode"
+#endif
+
+#include <saam/detail/tracked_borrow_manager.hpp>
+namespace saam
+{
+using current_borrow_manager_t = tracked_borrow_manager;
+}
+
+#elif SAAM_BORROW_CHECKING_MODE == UNCHECKED
+
+#include <saam/detail/unchecked_borrow_manager.hpp>
+namespace saam
+{
+using current_borrow_manager_t = unchecked_borrow_manager;
+}
+
 #endif

@@ -39,6 +39,11 @@ class unchecked_borrow_manager
 
         ref_base &operator=(ref_base &&other) noexcept
         {
+            if (this == &other)
+            {
+                return *this;
+            }
+
             // Do no allocate a new borrow count for "this", but steal the borrow count from "other"
             borrow_manager_ = other.borrow_manager_;
             other.borrow_manager_ = nullptr;

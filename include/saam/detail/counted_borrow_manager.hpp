@@ -27,13 +27,18 @@ class counted_borrow_manager
       public:
         ref_base() = default;
 
+        ref_base(counted_borrow_manager &borrow_manager)
+            : borrow_manager_(&borrow_manager)
+        {
+            register_self();
+        }
+
         ref_base(const ref_base &other)
             : borrow_manager_(other.borrow_manager_)
         {
-            register_this();
+            register_self();
         }
 
-        // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
         ref_base(ref_base &&other) noexcept
             : borrow_manager_(other.borrow_manager_)
         {
@@ -44,28 +49,47 @@ class counted_borrow_manager
 
         ref_base &operator=(const ref_base &other)
         {
-            unregister_this();
+            if (this == &other)
+            {
+                return *this;
+            }
 
-            borrow_manager_ = other.borrow_manager_;
-            register_this();
+            const bool change_in_borrow_manager = borrow_manager_ == other.borrow_manager_;
+            if (change_in_borrow_manager)
+            {
+                unregister_self();
+
+                borrow_manager_ = other.borrow_manager_;
+                register_self();
+            }
 
             return *this;
         }
 
         ref_base &operator=(ref_base &&other) noexcept
         {
-            unregister_this();
+            if (this == &other)
+            {
+                return *this;
+            }
 
-            // Do no allocate a new borrow count for "this", but steal the borrow count from "other"
-            borrow_manager_ = other.borrow_manager_;
-            other.borrow_manager_ = nullptr;
+            const bool change_in_borrow_manager = borrow_manager_ == other.borrow_manager_;
+            if (change_in_borrow_manager)
+            {
+                unregister_self();
+
+                borrow_manager_ = other.borrow_manager_;
+                register_self();
+            }
+
+            other.unregister_self();
 
             return *this;
         }
 
         ~ref_base()
         {
-            unregister_this();
+            unregister_self();
         }
 
         [[nodiscard]] counted_borrow_manager *borrow_manager() const noexcept
@@ -79,13 +103,7 @@ class counted_borrow_manager
             return borrow_manager_ != nullptr;
         }
 
-        ref_base(counted_borrow_manager &borrow_counter)
-            : borrow_manager_(&borrow_counter)
-        {
-            register_this();
-        }
-
-        void register_this() noexcept
+        void register_self() noexcept
         {
             if (!is_managed())
             {
@@ -95,7 +113,7 @@ class counted_borrow_manager
             borrow_manager_->register_reference();
         }
 
-        void unregister_this() noexcept
+        void unregister_self() noexcept
         {
             if (global_panic_handler.is_panic_active() || !is_managed())
             {
