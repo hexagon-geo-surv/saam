@@ -13,8 +13,6 @@
 namespace saam
 {
 
-class tracked_borrow_manager;
-
 class tracked_borrow_manager
 {
   public:

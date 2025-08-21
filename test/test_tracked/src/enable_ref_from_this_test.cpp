@@ -82,7 +82,7 @@ class my_class_only_post_constructor : public saam::enable_ref_from_this<my_clas
 TEST_F(tracked_enable_ref_from_this_test, pre_ref)
 {
     {
-        saam::var<my_class_only_post_constructor> mc;
+        saam::var<my_class_only_post_constructor> my_inst;
     }
 
     ASSERT_TRUE(global_panic_handler.is_panic_active());
@@ -111,7 +111,7 @@ class my_class_with_post_constructor_and_pre_destructor
 TEST_F(tracked_enable_ref_from_this_test, pre2_ref)
 {
     {
-        saam::var<my_class_with_post_constructor_and_pre_destructor> mc;
+        saam::var<my_class_with_post_constructor_and_pre_destructor> my_inst;
     }
 
     ASSERT_FALSE(global_panic_handler.is_panic_active());
