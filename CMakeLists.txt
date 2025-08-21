@@ -14,11 +14,6 @@ project(saam
         VERSION ${SAAM_VERSION}
 )
 
-set(EXPECTED_MINIMAL_CMAKE_CXX_STANDARD 20)
-if ((NOT CMAKE_CXX_STANDARD) OR CMAKE_CXX_STANDARD LESS EXPECTED_MINIMAL_CMAKE_CXX_STANDARD)
-    message(FATAL_ERROR "${PROJECT_NAME} requires 'CMAKE_CXX_STANDARD' defined, and at least C++${EXPECTED_MINIMAL_CMAKE_CXX_STANDARD} standard")
-endif()
-
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
@@ -61,6 +56,9 @@ target_include_directories(${PROJECT_NAME}
         ${PRJ_INCLUDE_DIR_STEM}
         ${GENERATED_INCLUDE_DIR}
 )
+
+# Define minimum C++ standard - unless it is defined in the toolchain
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 target_link_libraries(${PROJECT_NAME}
     INTERFACE
