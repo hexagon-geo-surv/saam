@@ -58,7 +58,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 # Define minimum C++ standard - unless it is defined in the toolchain
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
+target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
 
 target_link_libraries(${PROJECT_NAME}
     INTERFACE

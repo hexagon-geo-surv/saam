@@ -48,7 +48,7 @@ class tracked_borrow_manager
                 return *this;
             }
 
-            const bool change_in_borrow_manager = borrow_manager_ == other.borrow_manager_;
+            const bool change_in_borrow_manager = borrow_manager_ != other.borrow_manager_;
             if (change_in_borrow_manager)
             {
                 unregister_self();
@@ -67,7 +67,7 @@ class tracked_borrow_manager
                 return *this;
             }
 
-            const bool change_in_borrow_manager = borrow_manager_ == other.borrow_manager_;
+            const bool change_in_borrow_manager = borrow_manager_ != other.borrow_manager_;
             if (change_in_borrow_manager)
             {
                 unregister_self();
