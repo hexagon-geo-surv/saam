@@ -9,7 +9,7 @@ from conan.tools.scm import Version
 from conan.tools.files import copy, rmdir
 
 
-class RefcellDemoAppPackage(ConanFile):
+class SaamDemoAppPackage(ConanFile):
     name = "saam-demo"
     package_type = "application"
 

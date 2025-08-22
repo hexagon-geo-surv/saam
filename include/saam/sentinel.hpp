@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <saam/ref.hpp>
+#include <saam/safe_ref.hpp>
 
 #include <mutex>
 #include <shared_mutex>

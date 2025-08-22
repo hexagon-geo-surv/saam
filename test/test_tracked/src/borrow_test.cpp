@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include <saam/panic.hpp>
-#include <saam/ref.hpp>
-#include <saam/var.hpp>
+#include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -56,6 +55,16 @@ TEST_F(tracked_borrow_test, parallel_borrow)
 
     saam::ref<const std::string> text_immut2 = text;
     ASSERT_FALSE(global_panic_handler.is_panic_active());
+}
+
+TEST_F(tracked_borrow_test, nullable_ref)
+{
+    saam::var<std::string> text(std::in_place, "Hello world");
+
+    std::optional<saam::ref<std::string>> maybe_text_ref = text;
+
+    ASSERT_TRUE(maybe_text_ref);
+    ASSERT_EQ(maybe_text_ref.value()->at(0), 'H');
 }
 
 TEST_F(tracked_borrow_test, var_implicit_borrow)

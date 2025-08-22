@@ -5,7 +5,7 @@
 #pragma once
 
 #include <saam/panic.hpp>
-#include <saam/ref.hpp>
+#include <saam/safe_ref.hpp>
 #include <saam/sentinel.hpp>
 #include <saam/synchronized.hpp>
 
