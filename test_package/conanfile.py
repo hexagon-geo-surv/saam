@@ -8,7 +8,7 @@ from conan.tools.cmake import CMake, cmake_layout
 from conan import ConanFile
 from conan.tools.build import can_run
 
-class RefcellTestPackage(ConanFile):
+class SaamTestPackage(ConanFile):
     name = "saam_test_package"
 
     settings = "os", "compiler", "build_type", "arch"

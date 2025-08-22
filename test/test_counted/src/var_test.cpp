@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <saam/var.hpp>
+#include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
