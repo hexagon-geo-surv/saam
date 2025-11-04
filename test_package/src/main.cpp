@@ -14,7 +14,7 @@ int main()
 
     saam::var<int> smart_variable{42};
     *smart_variable.borrow() = 22;
-    std::cout << *smart_variable.borrow();
+    std::cout << *smart_variable.borrow() << std::endl;
 
     return 0;
 }
