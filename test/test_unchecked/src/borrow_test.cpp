@@ -13,11 +13,7 @@
 namespace saam::test
 {
 
-class unchecked_borrow_test : public ::testing::Test
-{
-};
-
-TEST_F(unchecked_borrow_test, sequential_borrow)
+TEST(unchecked_borrow_test, sequential_borrow)
 {
     auto process_text = [](saam::ref<std::string> text) { ++(text->at(0)); };
 
@@ -34,7 +30,7 @@ TEST_F(unchecked_borrow_test, sequential_borrow)
     }
 }
 
-TEST_F(unchecked_borrow_test, parallel_borrow)
+TEST(unchecked_borrow_test, parallel_borrow)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 
@@ -49,7 +45,7 @@ TEST_F(unchecked_borrow_test, parallel_borrow)
     ASSERT_EQ(text_immut2->at(0), 'Y');
 }
 
-TEST_F(unchecked_borrow_test, nullable_ref)
+TEST(unchecked_borrow_test, nullable_ref)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 
@@ -59,7 +55,7 @@ TEST_F(unchecked_borrow_test, nullable_ref)
     ASSERT_EQ(maybe_text_ref.value()->at(0), 'H');
 }
 
-TEST_F(unchecked_borrow_test, var_implicit_borrow)
+TEST(unchecked_borrow_test, var_implicit_borrow)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
 
@@ -70,7 +66,7 @@ TEST_F(unchecked_borrow_test, var_implicit_borrow)
     ASSERT_EQ(text_const_ref->at(0), 'H');
 }
 
-TEST_F(unchecked_borrow_test, borrow_move_copy_construction)
+TEST(unchecked_borrow_test, borrow_move_copy_construction)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 
@@ -83,7 +79,7 @@ TEST_F(unchecked_borrow_test, borrow_move_copy_construction)
     ASSERT_EQ(moved_text->at(0), 'H');
 }
 
-TEST_F(unchecked_borrow_test, borrow_move_copy_different_instance_assignment)
+TEST(unchecked_borrow_test, borrow_move_copy_different_instance_assignment)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
     saam::var<std::string> text2(std::in_place, "Welcom world");
@@ -97,7 +93,7 @@ TEST_F(unchecked_borrow_test, borrow_move_copy_different_instance_assignment)
     ASSERT_EQ(textref2->at(0), 'H');
 }
 
-TEST_F(unchecked_borrow_test, borrow_move_copy_same_instance_assignment)
+TEST(unchecked_borrow_test, borrow_move_copy_same_instance_assignment)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 

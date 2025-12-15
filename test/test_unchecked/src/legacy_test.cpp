@@ -13,11 +13,7 @@
 namespace saam::test
 {
 
-class unchecked_legacy_test : public ::testing::Test
-{
-};
-
-TEST_F(unchecked_legacy_test, mutable_cpp_variable_to_ref)
+TEST(unchecked_legacy_test, mutable_cpp_variable_to_ref)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
 
@@ -27,7 +23,7 @@ TEST_F(unchecked_legacy_test, mutable_cpp_variable_to_ref)
     ASSERT_EQ('Y', text.at(0));
 }
 
-TEST_F(unchecked_legacy_test, mutable_cpp_variable_to_const_ref)
+TEST(unchecked_legacy_test, mutable_cpp_variable_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -36,7 +32,7 @@ TEST_F(unchecked_legacy_test, mutable_cpp_variable_to_const_ref)
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
 }
 
-TEST_F(unchecked_legacy_test, const_cpp_variable_to_const_ref)
+TEST(unchecked_legacy_test, const_cpp_variable_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -45,7 +41,7 @@ TEST_F(unchecked_legacy_test, const_cpp_variable_to_const_ref)
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
 }
 
-TEST_F(unchecked_legacy_test, mutable_cpp_ref_to_ref)
+TEST(unchecked_legacy_test, mutable_cpp_ref_to_ref)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
 
@@ -56,7 +52,7 @@ TEST_F(unchecked_legacy_test, mutable_cpp_ref_to_ref)
     ASSERT_EQ('Y', text.at(0));
 }
 
-TEST_F(unchecked_legacy_test, mutable_cpp_ref_to_const_ref)
+TEST(unchecked_legacy_test, mutable_cpp_ref_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -66,7 +62,7 @@ TEST_F(unchecked_legacy_test, mutable_cpp_ref_to_const_ref)
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(textref)));
 }
 
-TEST_F(unchecked_legacy_test, const_cpp_ref_to_const_ref)
+TEST(unchecked_legacy_test, const_cpp_ref_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -76,7 +72,7 @@ TEST_F(unchecked_legacy_test, const_cpp_ref_to_const_ref)
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(textref)));
 }
 
-TEST_F(unchecked_legacy_test, mutable_cpp_var_to_const_ref)
+TEST(unchecked_legacy_test, mutable_cpp_var_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -85,7 +81,7 @@ TEST_F(unchecked_legacy_test, mutable_cpp_var_to_const_ref)
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
 }
 
-TEST_F(unchecked_legacy_test, const_cpp_var_to_const_ref)
+TEST(unchecked_legacy_test, const_cpp_var_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -94,7 +90,7 @@ TEST_F(unchecked_legacy_test, const_cpp_var_to_const_ref)
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
 }
 
-TEST_F(unchecked_legacy_test, var_to_cpp_reference_cast)
+TEST(unchecked_legacy_test, var_to_cpp_reference_cast)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 
@@ -107,7 +103,7 @@ TEST_F(unchecked_legacy_test, var_to_cpp_reference_cast)
     ASSERT_EQ(text_const_cppref.at(0), 'Y');
 }
 
-TEST_F(unchecked_legacy_test, var_const_to_cpp_reference_cast)
+TEST(unchecked_legacy_test, var_const_to_cpp_reference_cast)
 {
     saam::var<const std::string> text(std::in_place, "Hello world");
 

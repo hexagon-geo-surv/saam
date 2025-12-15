@@ -2,8 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include "unit_test_panic.hpp"
-
 #include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
@@ -15,16 +13,7 @@
 namespace saam::test
 {
 
-class counted_legacy_test : public ::testing::Test
-{
-  public:
-    void SetUp() override
-    {
-        test_panic_handler.clear_panic();
-    }
-};
-
-TEST_F(counted_legacy_test, mutable_cpp_variable_to_ref)
+TEST(counted_legacy_test, mutable_cpp_variable_to_ref)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
 
@@ -32,30 +21,27 @@ TEST_F(counted_legacy_test, mutable_cpp_variable_to_ref)
 
     process_text(saam::ref<std::string>(text));
     ASSERT_EQ('Y', text.at(0));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, mutable_cpp_variable_to_const_ref)
+TEST(counted_legacy_test, mutable_cpp_variable_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
     std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, const_cpp_variable_to_const_ref)
+TEST(counted_legacy_test, const_cpp_variable_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
     const std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, mutable_cpp_ref_to_ref)
+TEST(counted_legacy_test, mutable_cpp_ref_to_ref)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
 
@@ -64,10 +50,9 @@ TEST_F(counted_legacy_test, mutable_cpp_ref_to_ref)
 
     process_text(saam::ref<std::string>(textref));
     ASSERT_EQ('Y', text.at(0));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, mutable_cpp_ref_to_const_ref)
+TEST(counted_legacy_test, mutable_cpp_ref_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
@@ -75,41 +60,37 @@ TEST_F(counted_legacy_test, mutable_cpp_ref_to_const_ref)
     std::string &textref = text;
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(textref)));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, const_cpp_ref_to_const_ref)
+TEST(counted_legacy_test, const_cpp_ref_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
     const std::string text("Hello world");
     const std::string &textref = text;
 
-    ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
+    ASSERT_EQ('H', process_text(saam::ref<const std::string>(textref)));
 }
 
-TEST_F(counted_legacy_test, mutable_cpp_var_to_const_ref)
+TEST(counted_legacy_test, mutable_cpp_var_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
     std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, const_cpp_var_to_const_ref)
+TEST(counted_legacy_test, const_cpp_var_to_const_ref)
 {
     auto process_text = [](saam::ref<const std::string> text) { return text->at(0); };
 
     const std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_legacy_test, var_to_cpp_reference_cast)
+TEST(counted_legacy_test, var_to_cpp_reference_cast)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 
@@ -122,7 +103,7 @@ TEST_F(counted_legacy_test, var_to_cpp_reference_cast)
     ASSERT_EQ(text_const_cppref.at(0), 'Y');
 }
 
-TEST_F(counted_legacy_test, var_const_to_cpp_reference_cast)
+TEST(counted_legacy_test, var_const_to_cpp_reference_cast)
 {
     saam::var<const std::string> text(std::in_place, "Hello world");
 

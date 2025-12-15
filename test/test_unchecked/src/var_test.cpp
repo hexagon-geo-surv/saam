@@ -13,29 +13,25 @@
 namespace saam::test
 {
 
-class unchecked_var_test : public ::testing::Test
-{
-};
-
-TEST_F(unchecked_var_test, var_instance_move_creation)
+TEST(unchecked_var_test, var_instance_move_creation)
 {
     saam::var<std::string> text(std::in_place, std::string("Hello world"));
     ASSERT_EQ(text.borrow()->length(), 11);
 }
 
-TEST_F(unchecked_var_test, var_emplace_creation)
+TEST(unchecked_var_test, var_emplace_creation)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
     ASSERT_EQ(text.borrow()->length(), 11);
 }
 
-TEST_F(unchecked_var_test, var_instance_creation)
+TEST(unchecked_var_test, var_instance_creation)
 {
     saam::var<std::string> text("Hello world");
     ASSERT_EQ(text.borrow()->length(), 11);
 }
 
-TEST_F(unchecked_var_test, var_assignment)
+TEST(unchecked_var_test, var_assignment)
 {
     saam::var<std::string> text("Hello world");
     saam::var<std::string> text_copy;
@@ -43,7 +39,7 @@ TEST_F(unchecked_var_test, var_assignment)
     ASSERT_EQ(*text_copy.borrow(), "Hello world");
 }
 
-TEST_F(unchecked_var_test, var_content_assignment)
+TEST(unchecked_var_test, var_content_assignment)
 {
     saam::var<std::string> text("Hello world");
     saam::var<std::string> text_copy;
@@ -51,7 +47,7 @@ TEST_F(unchecked_var_test, var_content_assignment)
     ASSERT_EQ(*text_copy.borrow(), "Hello world");
 }
 
-TEST_F(unchecked_var_test, var_access_with_mutable_content)
+TEST(unchecked_var_test, var_access_with_mutable_content)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 
@@ -61,7 +57,7 @@ TEST_F(unchecked_var_test, var_access_with_mutable_content)
     ASSERT_EQ(text.borrow()->at(0), 'Y');
 }
 
-TEST_F(unchecked_var_test, var_access_with_immutable_content)
+TEST(unchecked_var_test, var_access_with_immutable_content)
 {
     saam::var<const std::string> text(std::in_place, "Hello world");
 
@@ -70,7 +66,7 @@ TEST_F(unchecked_var_test, var_access_with_immutable_content)
     // text.borrow()->at(0) = 'Y'; // This does not compile
 }
 
-TEST_F(unchecked_var_test, var_modification)
+TEST(unchecked_var_test, var_modification)
 {
     saam::var<std::string> text(std::in_place, "Hello world");
 

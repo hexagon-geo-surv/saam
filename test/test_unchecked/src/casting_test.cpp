@@ -12,10 +12,6 @@
 namespace saam::test
 {
 
-class unchecked_casting_test : public ::testing::Test
-{
-};
-
 class base
 {
   public:
@@ -61,7 +57,7 @@ class derived2 : public base
     }
 };
 
-TEST_F(unchecked_casting_test, explicit_upcasting_construction_from_var)
+TEST(unchecked_casting_test, explicit_upcasting_construction_from_var)
 {
     saam::var<derived> derived_instance;
 
@@ -74,7 +70,7 @@ TEST_F(unchecked_casting_test, explicit_upcasting_construction_from_var)
     ASSERT_EQ(const_base_reference->get_static_name(), "base");
 }
 
-TEST_F(unchecked_casting_test, implicit_upcasting_construction_from_var)
+TEST(unchecked_casting_test, implicit_upcasting_construction_from_var)
 {
     saam::var<derived> derived_instance;
 
@@ -87,7 +83,7 @@ TEST_F(unchecked_casting_test, implicit_upcasting_construction_from_var)
     ASSERT_EQ(const_base_reference->get_static_name(), "base");
 }
 
-TEST_F(unchecked_casting_test, upcasting_construction_from_ref)
+TEST(unchecked_casting_test, upcasting_construction_from_ref)
 {
     saam::var<derived> derived_instance;
 
@@ -106,7 +102,7 @@ TEST_F(unchecked_casting_test, upcasting_construction_from_ref)
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
 }
 
-TEST_F(unchecked_casting_test, upcasting_assignment_from_var)
+TEST(unchecked_casting_test, upcasting_assignment_from_var)
 {
     saam::var<derived> derived_instance;
 
@@ -119,7 +115,7 @@ TEST_F(unchecked_casting_test, upcasting_assignment_from_var)
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
 }
 
-TEST_F(unchecked_casting_test, upcasting_assignment_from_ref)
+TEST(unchecked_casting_test, upcasting_assignment_from_ref)
 {
     saam::var<derived> derived_instance;
 
@@ -138,7 +134,7 @@ TEST_F(unchecked_casting_test, upcasting_assignment_from_ref)
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
 }
 
-TEST_F(unchecked_casting_test, static_downcasting_from_ref)
+TEST(unchecked_casting_test, static_downcasting_from_ref)
 {
     saam::var<derived> derived_instance;
 
@@ -161,7 +157,7 @@ TEST_F(unchecked_casting_test, static_downcasting_from_ref)
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
 }
 
-TEST_F(unchecked_casting_test, dynamic_downcasting_from_ref)
+TEST(unchecked_casting_test, dynamic_downcasting_from_ref)
 {
     saam::var<derived> derived_instance;
 

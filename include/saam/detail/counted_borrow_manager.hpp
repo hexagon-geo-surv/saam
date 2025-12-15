@@ -10,15 +10,16 @@
 
 #include <atomic>
 #include <cassert>
+#include <limits>
 #include <typeinfo>
 
 namespace saam
 {
 
 // The user must define this function to handle the dangling reference situation.
-// This function is not expected to return, but shall abort the process.
-// After this function, dangling reference exists in the process, so the memory is possibly going to be corrupted soon.
-void dangling_reference_panic(const std::type_info &type, void *var_instance, std::size_t dangling_references) noexcept;
+// After this function, dangling reference(s) exist in the process, so the memory is possibly going to be corrupted soon.
+// Therefore, after returning from this function, the process will be aborted.
+void dangling_reference_panic(const std::type_info &var_type, void *var_instance, std::size_t num_dangling_references) noexcept;
 
 class counted_borrow_manager
 {
@@ -145,7 +146,7 @@ class counted_borrow_manager
 
     void unregister_reference() const
     {
-        auto prev_value = counter_--;
+        const auto prev_value = counter_--;
         // Reference count cannot go below zero
         assert(prev_value > 0);
     }
@@ -157,8 +158,9 @@ class counted_borrow_manager
             !counter_.compare_exchange_strong(prev_value, std::numeric_limits<std::size_t>::max());
         if (destroyed_with_active_references)
         {
-            // This function is not expected to return, but shall abort the process.
-            dangling_reference_panic(var_type, var_instance, counter_.load());
+            const auto num_dangling_references = counter_.load();
+            dangling_reference_panic(var_type, var_instance, num_dangling_references);
+            abort();
         }
     }
 

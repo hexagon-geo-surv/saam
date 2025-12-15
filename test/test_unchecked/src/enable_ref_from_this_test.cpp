@@ -12,10 +12,6 @@
 namespace saam::test
 {
 
-class unchecked_enable_ref_from_this_test : public ::testing::Test
-{
-};
-
 class my_class : public saam::enable_ref_from_this<my_class>
 {
   public:
@@ -33,7 +29,7 @@ class my_class : public saam::enable_ref_from_this<my_class>
     int increment_ = 1;
 };
 
-TEST_F(unchecked_enable_ref_from_this_test, happy_flow)
+TEST(unchecked_enable_ref_from_this_test, happy_flow)
 {
     saam::var<my_class> my_instance(std::in_place);
 

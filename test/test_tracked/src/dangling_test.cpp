@@ -10,12 +10,11 @@
 #include <optional>
 #include <string>
 #include <utility>
-#include <vector>
 
 namespace saam::test
 {
 
-TEST(counted_dangling_test, return_dangling_reference)
+TEST(tracked_dangling_test, return_dangling_reference)
 {
     auto generate_text = []() -> saam::ref<std::string> {
         saam::var<std::string> text(std::in_place, "Hello world");
@@ -25,7 +24,7 @@ TEST(counted_dangling_test, return_dangling_reference)
     EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");  // The regex ".*" matches any death message
 }
 
-TEST(counted_dangling_test, return_dangling_const_reference)
+TEST(tracked_dangling_test, return_dangling_const_reference)
 {
     auto generate_text = []() -> saam::ref<const std::string> {
         saam::var<std::string> text(std::in_place, "Hello world");
@@ -35,7 +34,7 @@ TEST(counted_dangling_test, return_dangling_const_reference)
     EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");  // The regex ".*" matches any death message
 }
 
-TEST(counted_dangling_test, free_variable_before_ref)
+TEST(tracked_dangling_test, free_variable_before_ref)
 {
     auto free_variable_before_ref = []() {
         // Reference is created and destroyed before the var variable
@@ -47,7 +46,7 @@ TEST(counted_dangling_test, free_variable_before_ref)
     EXPECT_DEATH({ free_variable_before_ref(); }, ".*");
 }
 
-TEST(counted_dangling_test, return_dangling_reference_with_return_value_optimization)
+TEST(tracked_dangling_test, return_dangling_reference_with_return_value_optimization)
 {
     auto return_dangling_reference_with_return_value_optimization = []() {
         saam::var<std::string> text{std::in_place, "hello"};
@@ -67,7 +66,7 @@ TEST(counted_dangling_test, return_dangling_reference_with_return_value_optimiza
     EXPECT_DEATH({ return_dangling_reference_with_return_value_optimization(); }, ".*");
 }
 
-TEST(counted_dangling_test, container_invalidates_reference)
+TEST(tracked_dangling_test, container_invalidates_reference)
 {
     std::vector<saam::var<std::string>> vec;
 

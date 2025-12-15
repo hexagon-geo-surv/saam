@@ -4,14 +4,21 @@
 
 #pragma once
 
-#include <saam/panic.hpp>
-
+#include <cassert>
 #include <mutex>
 #include <sstream>
 #include <stacktrace>
 
 namespace saam
 {
+
+// The user must define this function to handle the dangling reference situation.
+// After this function, dangling reference(s) exist in the process, so the memory is possibly going to be corrupted soon.
+// This function is called for each dangling reference detected.
+// Therefore, after returning from this function, the process will be aborted.
+void dangling_reference_panic(const std::type_info &var_type,
+                              void *var_instance,
+                              const std::stacktrace &dangling_ref_creation_stack) noexcept;
 
 class tracked_borrow_manager
 {
@@ -114,7 +121,7 @@ class tracked_borrow_manager
 
         void unregister_self()
         {
-            if (global_panic_handler.is_panic_active() || !is_managed())
+            if (!is_managed())
             {
                 return;
             }
@@ -152,12 +159,16 @@ class tracked_borrow_manager
     {
         std::lock_guard guard(mutex_);
 
-        // Report only the first dangling reference
         const bool destroyed_with_active_references = ref_chain_root_ != nullptr;
         if (destroyed_with_active_references)
         {
-            // This function is not expected to return, but shall abort the process.
-            dangling_reference_panic(var_type, var_instance, ref_chain_root_->stacktrace_);
+            for (auto *current_link = ref_chain_root_; current_link != nullptr; current_link = current_link->next_)
+            {
+                const auto &ref_stacktrace = current_link->stacktrace_;
+                dangling_reference_panic(var_type, var_instance, ref_stacktrace);
+            }
+
+            abort();
         }
     }
 
@@ -181,7 +192,8 @@ class tracked_borrow_manager
         while (true)
         {
             ref_base *current_link = *previous_link_ptr;
-            assert_that(current_link != nullptr, "linked_ref not found, ref chain is corrupted");
+            // Sanity check - the linked_ref to detach must be in the chain
+            assert(current_link != nullptr);
 
             const bool link_to_detach_found = current_link == &ref_to_detach;
             if (link_to_detach_found)
