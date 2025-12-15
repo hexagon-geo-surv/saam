@@ -18,6 +18,8 @@ namespace saam
 // Therefore, after returning from this function, the process will be aborted.
 void dangling_reference_panic(const std::type_info &var_type,
                               void *var_instance,
+                              const std::stacktrace &var_destruction_stack,
+                              std::size_t dangling_ref_index,
                               const std::stacktrace &dangling_ref_creation_stack) noexcept;
 
 class tracked_borrow_manager
@@ -162,10 +164,13 @@ class tracked_borrow_manager
         const bool destroyed_with_active_references = ref_chain_root_ != nullptr;
         if (destroyed_with_active_references)
         {
+            std::size_t dangling_ref_index = 0;
+            std::stacktrace var_destruction_stack = std::stacktrace::current();
             for (auto *current_link = ref_chain_root_; current_link != nullptr; current_link = current_link->next_)
             {
                 const auto &ref_stacktrace = current_link->stacktrace_;
-                dangling_reference_panic(var_type, var_instance, ref_stacktrace);
+                dangling_reference_panic(var_type, var_instance, var_destruction_stack, dangling_ref_index, ref_stacktrace);
+                dangling_ref_index++;
             }
 
             abort();

@@ -251,7 +251,11 @@ This function is called for each dangling `saam::ref` on the `saam::var` that tr
 ``` c++
 namespace saam
 {
-void dangling_reference_panic(const std::type_info &var_type, void *var_instance, const std::stacktrace &dangling_ref_creation_stack) noexcept
+void dangling_reference_panic(const std::type_info &var_type,
+                              void *var_instance,
+                              const std::stacktrace &var_destruction_stack,
+                              std::size_t dangling_ref_index,
+                              const std::stacktrace &dangling_ref_creation_stack) noexcept
 {
     // Dump the panic state
 }
@@ -267,6 +271,8 @@ so we just have to narrow it down to the instance to fix the dangling.
 No borrow checking takes place, and the `saam::ref` class behaves like a raw reference.
 The `saam::ref` is optimized away by the compiler and the code runs the same as with raw references.
 This mode is recommended when maximum performance is needed, but the `saam` library infrastructure is still used, allowing changing to a safer policy without touching the code.
+
+As the unchecked mode does not do reference checking, no panic callback is needed.
 
 ### Recommended Usage
 
