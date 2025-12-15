@@ -66,17 +66,12 @@ class my_class_only_post_constructor : public saam::enable_ref_from_this<my_clas
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
 };
 
-// TEST(tracked_enable_ref_from_this_test, pre_ref)
-// {
-//     {
-//         saam::var<my_class_only_post_constructor> my_inst;
-//     }
+TEST(tracked_enable_ref_from_this_test, pre_ref)
+{
+    auto owning_self_reference_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
 
-//     ASSERT_TRUE(global_panic_handler.is_panic_active());
-//     const bool panic_message_is_correct =
-//         std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
-//     ASSERT_TRUE(panic_message_is_correct);
-// }
+    EXPECT_DEATH(owning_self_reference_at_destruction(), ".*");
+}
 
 class my_class_with_post_constructor_and_pre_destructor
     : public saam::enable_ref_from_this<my_class_with_post_constructor_and_pre_destructor>

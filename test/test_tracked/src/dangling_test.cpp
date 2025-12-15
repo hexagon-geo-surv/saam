@@ -21,7 +21,7 @@ TEST(tracked_dangling_test, return_dangling_reference)
         return text;
     };
 
-    EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");  // The regex ".*" matches any death message
+    EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");
 }
 
 TEST(tracked_dangling_test, return_dangling_const_reference)
@@ -31,7 +31,7 @@ TEST(tracked_dangling_test, return_dangling_const_reference)
         return text;
     };
 
-    EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");  // The regex ".*" matches any death message
+    EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");
 }
 
 TEST(tracked_dangling_test, free_variable_before_ref)
