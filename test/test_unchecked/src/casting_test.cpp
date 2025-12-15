@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <saam/panic.hpp>
 #include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
@@ -15,12 +14,6 @@ namespace saam::test
 
 class unchecked_casting_test : public ::testing::Test
 {
-  public:
-    void SetUp() override
-    {
-        global_panic_handler.set_panic_action(std::function<void(std::string_view)>());
-        global_panic_handler.clear_panic();
-    }
 };
 
 class base
@@ -75,12 +68,10 @@ TEST_F(unchecked_casting_test, explicit_upcasting_construction_from_var)
     saam::ref<base> base_reference = derived_instance.borrow();
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const base> const_base_reference = derived_instance.borrow();
     ASSERT_EQ(const_base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(const_base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
 TEST_F(unchecked_casting_test, implicit_upcasting_construction_from_var)
@@ -90,12 +81,10 @@ TEST_F(unchecked_casting_test, implicit_upcasting_construction_from_var)
     saam::ref<base> base_reference = derived_instance;
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const base> const_base_reference = derived_instance;
     ASSERT_EQ(const_base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(const_base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
 TEST_F(unchecked_casting_test, upcasting_construction_from_ref)
@@ -108,7 +97,6 @@ TEST_F(unchecked_casting_test, upcasting_construction_from_ref)
     ASSERT_EQ(derived_reference->get_static_name(), "derived");
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const derived> derived_const_reference = derived_instance;
     saam::ref<const base> base_const_reference = derived_const_reference;
@@ -116,7 +104,6 @@ TEST_F(unchecked_casting_test, upcasting_construction_from_ref)
     ASSERT_EQ(derived_const_reference->get_static_name(), "derived");
     ASSERT_EQ(base_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
 TEST_F(unchecked_casting_test, upcasting_assignment_from_var)
@@ -126,12 +113,10 @@ TEST_F(unchecked_casting_test, upcasting_assignment_from_var)
     saam::ref<base> base_reference = derived_instance;
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const base> base_const_reference = derived_instance;
     ASSERT_EQ(base_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
 TEST_F(unchecked_casting_test, upcasting_assignment_from_ref)
@@ -144,7 +129,6 @@ TEST_F(unchecked_casting_test, upcasting_assignment_from_ref)
     ASSERT_EQ(derived_reference->get_static_name(), "derived");
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const derived> derived_const_reference = derived_instance;
     saam::ref<const base> base_const_reference = derived_const_reference;
@@ -152,7 +136,6 @@ TEST_F(unchecked_casting_test, upcasting_assignment_from_ref)
     ASSERT_EQ(derived_const_reference->get_static_name(), "derived");
     ASSERT_EQ(base_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
 TEST_F(unchecked_casting_test, static_downcasting_from_ref)
@@ -165,12 +148,10 @@ TEST_F(unchecked_casting_test, static_downcasting_from_ref)
     ASSERT_EQ(derived_reference->get_static_name(), "derived");
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const derived> derived_const_reference = base_reference.static_down_cast<const derived>();
     ASSERT_EQ(derived_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(derived_const_reference->get_static_name(), "derived");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const base> base_const_reference = derived_instance;
     saam::ref<const derived> derived_const_reference2 = base_const_reference.static_down_cast<const derived>();
@@ -178,7 +159,6 @@ TEST_F(unchecked_casting_test, static_downcasting_from_ref)
     ASSERT_EQ(derived_const_reference2->get_static_name(), "derived");
     ASSERT_EQ(base_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
 TEST_F(unchecked_casting_test, dynamic_downcasting_from_ref)
@@ -191,12 +171,10 @@ TEST_F(unchecked_casting_test, dynamic_downcasting_from_ref)
     ASSERT_EQ(derived_reference->get_static_name(), "derived");
     ASSERT_EQ(base_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const derived> derived_const_reference = base_reference.dynamic_down_cast<const derived>();
     ASSERT_EQ(derived_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(derived_const_reference->get_static_name(), "derived");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     saam::ref<const base> base_const_reference = derived_instance;
     saam::ref<const derived> derived_const_reference2 = base_const_reference.dynamic_down_cast<const derived>();
@@ -204,7 +182,6 @@ TEST_F(unchecked_casting_test, dynamic_downcasting_from_ref)
     ASSERT_EQ(derived_const_reference2->get_static_name(), "derived");
     ASSERT_EQ(base_const_reference->get_dynamice_name(), "derived");
     ASSERT_EQ(base_const_reference->get_static_name(), "base");
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 
     EXPECT_THROW(base_const_reference.dynamic_down_cast<const derived2>(), std::bad_cast);
 }

@@ -49,7 +49,7 @@ class SaamPackage(ConanFile):
         toolchain.cache_variables["CMAKE_VERBOSE_MAKEFILE"] = True
         toolchain.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = True
         toolchain.cache_variables["SAAM_VERSION"] = self.three_number_version
-        toolchain.cache_variables["SAAM_BORROW_CHECKING_MODE_CMAKE"] = {"unchecked":"UNCHECKED", "counted":"COUNTED", "tracked":"TRACKED"}[str(self.options.bc_mode)]
+        toolchain.cache_variables["SAAM_BORROW_CHECKING_MODE_CMAKE"] = {"unchecked":"2", "counted":"0", "tracked":"1"}[str(self.options.bc_mode)]
         toolchain.generate()
 
     def build(self):

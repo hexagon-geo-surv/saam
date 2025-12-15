@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include <saam/panic.hpp>
 #include <saam/safe_ref.hpp>
 #include <saam/sentinel.hpp>
 #include <saam/synchronized.hpp>
 
 #include <any>
+#include <cassert>
 #include <chrono>
 #include <condition_variable>
 #include <functional>
@@ -42,8 +42,8 @@ class condition
         const std::function<bool(const typename std::remove_reference_t<decltype(sentinel)>::value_t &)> &exit_criteria,
         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<Clock, Duration>>> maybe_timeout = std::nullopt)
     {
-        assert_that(sentinel.protected_instance_ == *std::any_cast<saam::ref<std::remove_cv_t<T>>>(&protected_instance_),
-                    "condition is not related to sentinel");
+        // Ensure that the condition is related to the sentinel
+        assert(sentinel.protected_instance_ == *std::any_cast<saam::ref<std::remove_cv_t<T>>>(&protected_instance_));
 
         auto waiting_predicate = [&sentinel, &exit_criteria]() { return exit_criteria(*sentinel); };
 

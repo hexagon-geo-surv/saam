@@ -97,7 +97,7 @@ basic_var<T, TBorrowManager>::~basic_var()
     // Before destroying the owned object, we need to check if there are any active references
     // The desctruction of the owned object cannot be done before the reference check,
     // because it would allow a data race between a thread inside the owned object and the destructor of the owned object.
-    borrow_manager_.verify_dangling_references(typeid(T));
+    borrow_manager_.verify_dangling_references(typeid(T), this);
 }
 
 template <class T, borrow_manager TBorrowManager>

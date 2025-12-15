@@ -5,7 +5,8 @@
 #pragma once
 
 #include <saam/detail/basic_var.hpp>
-#include <saam/panic.hpp>
+
+#include <cassert>
 
 namespace saam
 {
@@ -36,14 +37,14 @@ class basic_enable_ref_from_this
     // Mutable borrow
     [[nodiscard]] basic_ref<T, TRefManager> borrow_from_this()
     {
-        assert_that(manager_, "enable_ref_from_this: no var available");
+        assert(manager_);
         return {*manager_};
     }
 
     // Immutable borrow
     [[nodiscard]] basic_ref<const T, TRefManager> borrow_from_this() const
     {
-        assert_that(manager_, "enable_ref_from_this: no var available");
+        assert(manager_);
         return {*manager_};
     }
 

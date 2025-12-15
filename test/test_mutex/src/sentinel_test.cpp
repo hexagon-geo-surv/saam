@@ -22,11 +22,6 @@ class sentinel_test : public ::testing::Test
     {
     }
 
-    void SetUp() override
-    {
-        global_panic_handler.clear_panic();
-    }
-
     saam::synchronized<std::string> text_;
 };
 

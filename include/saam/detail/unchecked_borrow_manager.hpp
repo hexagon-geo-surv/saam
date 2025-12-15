@@ -7,7 +7,6 @@
 #include <saam/detail/basic_enable_ref_from_this.hpp>
 #include <saam/detail/basic_ref.hpp>
 #include <saam/detail/basic_var.hpp>
-#include <saam/panic.hpp>
 
 #include <typeinfo>
 
@@ -80,7 +79,7 @@ class unchecked_borrow_manager
     unchecked_borrow_manager &operator=(const unchecked_borrow_manager &other) = delete;
     unchecked_borrow_manager &operator=(unchecked_borrow_manager &&other) noexcept = delete;
 
-    void verify_dangling_references(const std::type_info &type) const noexcept
+    void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
     }
 };

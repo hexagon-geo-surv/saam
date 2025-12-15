@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "unit_test_panic.hpp"
+
 #include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
@@ -18,8 +20,7 @@ class counted_legacy_test : public ::testing::Test
   public:
     void SetUp() override
     {
-        global_panic_handler.set_panic_action(std::function<void(std::string_view)>());
-        global_panic_handler.clear_panic();
+        test_panic_handler.clear_panic();
     }
 };
 
@@ -31,7 +32,7 @@ TEST_F(counted_legacy_test, mutable_cpp_variable_to_ref)
 
     process_text(saam::ref<std::string>(text));
     ASSERT_EQ('Y', text.at(0));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, mutable_cpp_variable_to_const_ref)
@@ -41,7 +42,7 @@ TEST_F(counted_legacy_test, mutable_cpp_variable_to_const_ref)
     std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, const_cpp_variable_to_const_ref)
@@ -51,7 +52,7 @@ TEST_F(counted_legacy_test, const_cpp_variable_to_const_ref)
     const std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, mutable_cpp_ref_to_ref)
@@ -63,7 +64,7 @@ TEST_F(counted_legacy_test, mutable_cpp_ref_to_ref)
 
     process_text(saam::ref<std::string>(textref));
     ASSERT_EQ('Y', text.at(0));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, mutable_cpp_ref_to_const_ref)
@@ -74,7 +75,7 @@ TEST_F(counted_legacy_test, mutable_cpp_ref_to_const_ref)
     std::string &textref = text;
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(textref)));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, const_cpp_ref_to_const_ref)
@@ -85,7 +86,7 @@ TEST_F(counted_legacy_test, const_cpp_ref_to_const_ref)
     const std::string &textref = text;
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, mutable_cpp_var_to_const_ref)
@@ -95,7 +96,7 @@ TEST_F(counted_legacy_test, mutable_cpp_var_to_const_ref)
     std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, const_cpp_var_to_const_ref)
@@ -105,7 +106,7 @@ TEST_F(counted_legacy_test, const_cpp_var_to_const_ref)
     const std::string text("Hello world");
 
     ASSERT_EQ('H', process_text(saam::ref<const std::string>(text)));
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_legacy_test, var_to_cpp_reference_cast)

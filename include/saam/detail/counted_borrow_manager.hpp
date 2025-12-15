@@ -7,15 +7,18 @@
 #include <saam/detail/basic_enable_ref_from_this.hpp>
 #include <saam/detail/basic_ref.hpp>
 #include <saam/detail/basic_var.hpp>
-#include <saam/panic.hpp>
 
 #include <atomic>
-#include <limits>
-#include <sstream>
+#include <cassert>
 #include <typeinfo>
 
 namespace saam
 {
+
+// The user must define this function to handle the dangling reference situation.
+// This function is not expected to return, but shall abort the process.
+// After this function, dangling reference exists in the process, so the memory is possibly going to be corrupted soon.
+void dangling_reference_panic(const std::type_info &type, void *var_instance, std::size_t dangling_references) noexcept;
 
 class counted_borrow_manager
 {
@@ -42,7 +45,7 @@ class counted_borrow_manager
         ref_base(ref_base &&other) noexcept
             : borrow_manager_(other.borrow_manager_)
         {
-            // "this" gets always the same reference counter as "other", so the count that "other" looses, gains "this"
+            // "this" gets always the same reference counter as "other", so the count that "other" loses, gains "this"
             // -> no modification on the counter needed
             other.borrow_manager_ = nullptr;
         }
@@ -115,7 +118,7 @@ class counted_borrow_manager
 
         void unregister_self() noexcept
         {
-            if (global_panic_handler.is_panic_active() || !is_managed())
+            if (!is_managed())
             {
                 return;
             }
@@ -143,33 +146,26 @@ class counted_borrow_manager
     void unregister_reference() const
     {
         auto prev_value = counter_--;
-        assert_that(prev_value > 0, "corrupted reference count");
+        // Reference count cannot go below zero
+        assert(prev_value > 0);
     }
 
-    void verify_dangling_references(const std::type_info &type) const noexcept
+    void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
-        const bool destroying_with_active_references = !close_counting();
-        if (destroying_with_active_references)
+        std::size_t prev_value = 0;
+        const bool destroyed_with_active_references =
+            !counter_.compare_exchange_strong(prev_value, std::numeric_limits<std::size_t>::max());
+        if (destroyed_with_active_references)
         {
-            std::ostringstream panic_message;
-            panic_message << "Borrow checked variable of type <" << type.name() << "> destroyed with " << counter_
-                          << " active reference(s).\n";
-            global_panic_handler.trigger_panic(panic_message.str());
+            // This function is not expected to return, but shall abort the process.
+            dangling_reference_panic(var_type, var_instance, counter_.load());
         }
     }
 
   private:
-    bool close_counting() const
-    {
-        std::size_t prev_value = 0;
-        const bool closing_suceeded = counter_.compare_exchange_strong(prev_value, std::numeric_limits<std::size_t>::max());
-        return closing_suceeded;
-    }
-
     // maxint the counter was closed, no more borrows are allowed
     // 0 counter means that the instance is not borrowed
     // counter > 0 means that the instance is borrowed
-
     mutable std::atomic<std::size_t> counter_ = 0;
 };
 

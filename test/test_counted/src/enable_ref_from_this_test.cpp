@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "unit_test_panic.hpp"
+
 #include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
@@ -19,8 +21,7 @@ class counted_enable_ref_from_this_test : public ::testing::Test
   public:
     void SetUp() override
     {
-        global_panic_handler.set_panic_action(std::function<void(std::string_view)>());
-        global_panic_handler.clear_panic();
+        test_panic_handler.clear_panic();
     }
 };
 
@@ -49,7 +50,7 @@ TEST_F(counted_enable_ref_from_this_test, happy_flow)
 
     ASSERT_EQ(int(6), callback(5));
 
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 TEST_F(counted_enable_ref_from_this_test, dangling_ref)
@@ -62,9 +63,9 @@ TEST_F(counted_enable_ref_from_this_test, dangling_ref)
         // my_instance is gone at this point, so the callback contains a dangling reference
     }
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
@@ -85,9 +86,9 @@ TEST_F(counted_enable_ref_from_this_test, pre_ref)
         saam::var<my_class_only_post_constructor> mc;
     }
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
@@ -114,7 +115,7 @@ TEST_F(counted_enable_ref_from_this_test, pre2_ref)
         saam::var<my_class_with_post_constructor_and_pre_destructor> mc;
     }
 
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 }
 
 }  // namespace saam::test

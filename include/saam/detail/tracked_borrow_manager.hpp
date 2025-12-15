@@ -148,45 +148,17 @@ class tracked_borrow_manager
         *previous_link_ptr = (*previous_link_ptr)->next_;
     }
 
-    void verify_dangling_references(const std::type_info &type) const noexcept
-    {
-        auto active_ref_stacktraces = collect_active_ref_stacktraces();
-        const bool destroyed_with_active_references = !active_ref_stacktraces.empty();
-        if (destroyed_with_active_references)
-        {
-            std::ostringstream panic_message;
-            panic_message << "Borrow checked variable of type <" << type.name() << "> destroyed at \n"
-                          << std::stacktrace::current() << "\n\n";
-            panic_message << "still has active references. Active reference(s) created at: \n";
-
-            for (const auto &stacktrace : active_ref_stacktraces)
-            {
-                if (!stacktrace.empty())
-                {
-                    panic_message << stacktrace << '\n';
-                }
-                else
-                {
-                    panic_message << "No stack trace available\n";
-                }
-
-                panic_message << "-------------------------------\n";
-            }
-            global_panic_handler.trigger_panic(panic_message.str());
-        }
-    }
-
-    std::vector<std::stacktrace> collect_active_ref_stacktraces() const
+    void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
         std::lock_guard guard(mutex_);
 
-        std::vector<std::stacktrace> stacktraces;
-        for (auto current_link = ref_chain_root_; current_link != nullptr; current_link = current_link->next_)
+        // Report only the first dangling reference
+        const bool destroyed_with_active_references = ref_chain_root_ != nullptr;
+        if (destroyed_with_active_references)
         {
-            stacktraces.push_back(current_link->stacktrace_);
+            // This function is not expected to return, but shall abort the process.
+            dangling_reference_panic(var_type, var_instance, ref_chain_root_->stacktrace_);
         }
-
-        return stacktraces;
     }
 
     bool stack_tracking_enabled() const

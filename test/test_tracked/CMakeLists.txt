@@ -58,7 +58,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
-        SAAM_BORROW_CHECKING_MODE=TRACKED
+        SAAM_BORROW_CHECKING_MODE=1
 )
 
 #
@@ -75,7 +75,6 @@ target_link_libraries(${PROJECT_NAME}
         GTest::gtest
         GTest::gmock
         GTest::gmock_main
-    
 )
 
 if(NOT CMAKE_CROSSCOMPILING)

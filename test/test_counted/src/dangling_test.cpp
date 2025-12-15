@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "unit_test_panic.hpp"
+
 #include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
@@ -21,8 +23,7 @@ class counted_dangling_test : public ::testing::Test
   public:
     void SetUp() override
     {
-        global_panic_handler.set_panic_action(std::function<void(std::string_view)>());
-        global_panic_handler.clear_panic();
+        test_panic_handler.clear_panic();
     }
 };
 
@@ -34,9 +35,9 @@ TEST_F(counted_dangling_test, return_dangling_reference)
     };
 
     auto generated_text = generate_text();
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
@@ -48,9 +49,9 @@ TEST_F(counted_dangling_test, return_dangling_const_reference)
     };
 
     auto generated_text = generate_text();
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
@@ -65,9 +66,9 @@ TEST_F(counted_dangling_test, free_variable_before_ref)
         capitalized_text_ref = text;
     }
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
@@ -90,9 +91,9 @@ TEST_F(counted_dangling_test, return_dangling_reference_with_return_value_optimi
         saam::var<std::string> capitalized_text = capitalize(text);
     }
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
@@ -104,14 +105,14 @@ TEST_F(counted_dangling_test, container_invalidates_reference)
     vec.emplace_back(std::in_place, "hello");
     saam::ref<std::string> text_ref = vec.back();
 
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    ASSERT_FALSE(test_panic_handler.is_panic_active());
 
     // Adding a new element reallocates the internal buffer and invalidates the reference
     vec.emplace_back(std::in_place, "world");
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
+    ASSERT_TRUE(test_panic_handler.is_panic_active());
     const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
+        std::regex_match(test_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
     ASSERT_TRUE(panic_message_is_correct);
 }
 
