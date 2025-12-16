@@ -2,14 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include "gtest/gtest.h"
 #include <saam/safe_ref.hpp>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <optional>
-#include <regex>
 #include <utility>
 
 namespace saam::test

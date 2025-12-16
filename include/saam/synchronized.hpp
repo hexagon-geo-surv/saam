@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <saam/sentinel.hpp>
 #include <saam/safe_ref.hpp>
+#include <saam/sentinel.hpp>
 
 #include <mutex>
 #include <shared_mutex>

@@ -2,12 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-Checks: "-*,readability-*,cppcoreguidelines-*,modernize-*,performance-*,misc-*,hicpp-*,concurrecy-*,bugprone-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-misc-non-private-member-variables-in-classes,-modernize-use-trailing-return-type"
+Checks: "-*,readability-*,cppcoreguidelines-*,modernize-*,performance-*,misc-*,hicpp-*,concurrency-*,bugprone-*,cert-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-misc-non-private-member-variables-in-classes,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays,-cppcoreguidelines-avoid-c-arrays,-readability-isolate-declaration,-cert-err58-cpp"
 CheckOptions:
+  # Naming conventions
   - { key: readability-identifier-naming.ClassCase, value: lower_case }
   - { key: readability-identifier-naming.ClassMemberCase, value: lower_case }
-  - { key: readability-identifier-naming.ClassMemberPrefix, value: _ }
+  - { key: readability-identifier-naming.PrivateMemberCase, value: lower_case }
   - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberCase, value: lower_case }
+  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }
 
   - { key: readability-identifier-naming.EnumCase, value: lower_case }
   - { key: readability-identifier-naming.EnumConstantCase, value: lower_case }
@@ -18,6 +21,7 @@ CheckOptions:
 
   - { key: readability-identifier-naming.TypedefCase, value: lower_case }
   - { key: readability-identifier-naming.TypeAliasCase, value: lower_case }
+  - { key: readability-identifier-naming.TypeAliasSuffix, value: _t }
   
   - { key: readability-identifier-naming.UnionCase, value: lower_case }
 
@@ -27,19 +31,35 @@ CheckOptions:
 
   - { key: readability-identifier-naming.LocalConstantCase, value: lower_case }
   - { key: readability-identifier-naming.ConstantCase, value: lower_case }
-  - { key: readability-identifier-naming.ConstexprVariable, value: lower_case }
+  - { key: readability-identifier-naming.ConstexprVariableCase, value: lower_case }
   - { key: readability-identifier-naming.LocalVariableCase, value: lower_case }
-
+  - { key: readability-identifier-naming.VariableCase, value: lower_case }
 
   - { key: readability-identifier-naming.GlobalVariableCase, value: lower_case }
   - { key: readability-identifier-naming.GlobalConstantCase, value: lower_case }
   - { key: readability-identifier-naming.StaticConstantCase, value: lower_case }
   - { key: readability-identifier-naming.StaticVariableCase, value: lower_case }
 
-  - { key: readability-identifier-naming.VariableCase, value: lower_case }
+  # Template parameters: match actual usage
+  - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase }
+  - { key: readability-identifier-naming.TemplateParameterPrefix, value: T }
+  - { key: readability-identifier-naming.TypeTemplateParameterCase, value: CamelCase }
+  - { key: readability-identifier-naming.TypeTemplateParameterPrefix, value: T }
+  - { key: readability-identifier-naming.ValueTemplateParameterCase, value: CamelCase }
+  - { key: readability-identifier-naming.ValueTemplateParameterPrefix, value: T }
 
-  - { key: readability-identifier-naming.TemplateParamter, value: CamelCase }
   - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
+
+  # Performance and readability settings
+  - { key: readability-function-cognitive-complexity.Threshold, value: 25 }
+  - { key: readability-function-size.LineThreshold, value: 80 }
+  - { key: readability-function-size.StatementThreshold, value: 50 }
+  - { key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor, value: true }
+  - { key: modernize-loop-convert.MaxCopySize, value: 16 }
+  - { key: modernize-loop-convert.MinConfidence, value: reasonable }
+  - { key: performance-for-range-copy.WarnOnAllAutoCopies, value: true }
+  - { key: performance-inefficient-vector-operation.EnableProto, value: true }
+
 WarningsAsErrors: ""
 HeaderFilterRegex: "saam/.*"
 FormatStyle: none

@@ -10,7 +10,6 @@
 
 #include <thread>
 
-
 namespace saam::test
 {
 
@@ -30,7 +29,7 @@ TEST_F(condition_test, cond)
     std::thread thread_worker([&]() {
         for (;;)
         {
-            int new_value;
+            double new_value;
             {
                 auto locked_m = synced_m.lock_mut();
                 new_value = ++(*locked_m);

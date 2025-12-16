@@ -13,11 +13,43 @@ QualifierAlignment: Left
 # Line break limit in characters
 ColumnLimit: 140
 
+# Template and class formatting
 AlwaysBreakTemplateDeclarations: Yes
 BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+# Namespace and comment formatting  
 FixNamespaceComments: Yes
 SpacesBeforeTrailingComments: 2
-InsertNewlineAtEOF: true
+NamespaceIndentation: None
+
+# Function and parameter formatting
 BinPackArguments: false
 BinPackParameters: false
 AlignAfterOpenBracket: Align
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+
+# Include formatting
+SortIncludes: CaseInsensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Implementation headers
+  - Regex: '".*"'
+    Priority: 1
+  # API headers
+  - Regex: '^<saam/'
+    Priority: 2
+  # 3rd party headers (libraries with subdirectories)
+  - Regex: '^<[[:alnum:]_]+/'
+    Priority: 3
+  # STL headers
+  - Regex: '^<[[:alnum:]_]+>'
+    Priority: 4
+
+# Misc formatting
+InsertNewlineAtEOF: true
+IndentRequiresClause: true
+RequiresClausePosition: OwnLine

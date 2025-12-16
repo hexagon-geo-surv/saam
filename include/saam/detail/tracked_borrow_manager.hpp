@@ -6,7 +6,6 @@
 
 #include <cassert>
 #include <mutex>
-#include <sstream>
 #include <stacktrace>
 
 namespace saam
@@ -115,10 +114,7 @@ class tracked_borrow_manager
             borrow_manager_->register_ref(*this);
 
             // The linked_ref is now attached to a var, let's capture the stacktrace of this moment
-            if (borrow_manager_->stack_tracking_enabled())
-            {
-                stacktrace_ = std::stacktrace::current();
-            }
+            stacktrace_ = std::stacktrace::current();
         }
 
         void unregister_self()
@@ -177,19 +173,6 @@ class tracked_borrow_manager
         }
     }
 
-    bool stack_tracking_enabled() const
-    {
-        std::lock_guard guard(mutex_);
-        return stack_tracking_enabled_;
-    }
-
-    tracked_borrow_manager &stack_tracking_enabled(bool enabled)
-    {
-        std::lock_guard guard(mutex_);
-        stack_tracking_enabled_ = enabled;
-        return *this;
-    }
-
   private:
     ref_base **get_previous_ptr_in_chain(ref_base &ref_to_detach)
     {
@@ -211,7 +194,6 @@ class tracked_borrow_manager
     }
 
     mutable std::mutex mutex_;
-    bool stack_tracking_enabled_ = false;
     ref_base *ref_chain_root_ = nullptr;
 };
 

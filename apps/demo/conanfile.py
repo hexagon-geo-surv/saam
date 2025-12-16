@@ -22,7 +22,7 @@ class SaamDemoAppPackage(ConanFile):
     generators = "CMakeDeps", "VirtualRunEnv", "VirtualBuildEnv"
 
     def requirements(self):
-        self.requires(f"saam/[{self.version}]@", transitive_headers=True)
+        self.requires(f"saam/0.3.0@rtam/stable", transitive_headers=True)
 
     def generate(self):
         toolchain = CMakeToolchain(self)
