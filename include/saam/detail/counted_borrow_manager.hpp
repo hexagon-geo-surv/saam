@@ -147,7 +147,7 @@ class counted_borrow_manager
     void unregister_reference() const
     {
         const auto prev_value = counter_--;
-        // Reference count cannot go below zero
+        // Reference count cannot go below zero, so the previous value must be greater than zero
         assert(prev_value > 0);
     }
 
