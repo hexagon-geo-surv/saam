@@ -29,20 +29,20 @@ class tracked_borrow_manager
       public:
         ref_base() = default;
 
-        ref_base(tracked_borrow_manager &borrow_manager)
-            : borrow_manager_(&borrow_manager)
+        ref_base(tracked_borrow_manager &borrow_manager) :
+            borrow_manager_(&borrow_manager)
         {
             register_self();
         }
 
-        ref_base(const ref_base &other)
-            : borrow_manager_(other.borrow_manager_)
+        ref_base(const ref_base &other) :
+            borrow_manager_(other.borrow_manager_)
         {
             register_self();
         }
 
-        ref_base(ref_base &&other) noexcept
-            : borrow_manager_(other.borrow_manager_)
+        ref_base(ref_base &&other) noexcept :
+            borrow_manager_(other.borrow_manager_)
         {
             register_self();
 

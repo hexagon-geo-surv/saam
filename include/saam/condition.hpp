@@ -25,8 +25,8 @@ class condition
 {
   public:
     template <typename T>
-    explicit condition(const synchronized<T> &synchronized)
-        : protected_instance_(synchronized.protected_instance_.borrow())
+    explicit condition(const synchronized<T> &synchronized) :
+        protected_instance_(synchronized.protected_instance_.borrow())
     {
     }
 

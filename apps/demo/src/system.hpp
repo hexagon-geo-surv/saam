@@ -13,12 +13,12 @@
 
 namespace demo
 {
-  
+
 class system
 {
   public:
-    system()
-        : component_b_(std::in_place, make_any_ptr(component_a_))
+    system() :
+        component_b_(std::in_place, make_any_ptr(component_a_))
     {
     }
 

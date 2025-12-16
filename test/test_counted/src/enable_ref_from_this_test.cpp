@@ -71,8 +71,8 @@ TEST(counted_enable_ref_from_this_test, pre_ref)
     EXPECT_DEATH(owning_self_reference_at_destruction(), ".*");
 }
 
-class my_class_with_post_constructor_and_pre_destructor
-    : public saam::enable_ref_from_this<my_class_with_post_constructor_and_pre_destructor>
+class my_class_with_post_constructor_and_pre_destructor :
+    public saam::enable_ref_from_this<my_class_with_post_constructor_and_pre_destructor>
 {
   public:
     void post_constructor()

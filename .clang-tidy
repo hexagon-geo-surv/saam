@@ -1,46 +1,94 @@
-# SPDX-FileCopyrightText: Leica Geosystems AG
-#
-# SPDX-License-Identifier: MIT
+# Clang-Tidy configuration file
+# This file defines code analysis checks and coding standards for the project
+# 
+# Example usage:
+#   clang-tidy --config-file=.clang-tidy src/main.cpp
+#   OR (automatic discovery): clang-tidy src/main.cpp
 
+# Enabled/Disabled checks specification
+# "-*" disables all checks by default, then specific categories are enabled with commas
+# Categories prefixed with "-" are disabled
 Checks: "-*,readability-*,cppcoreguidelines-*,modernize-*,performance-*,misc-*,hicpp-*,concurrency-*,bugprone-*,cert-*,-cppcoreguidelines-avoid-magic-numbers,-readability-magic-numbers,-misc-non-private-member-variables-in-classes,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays,-cppcoreguidelines-avoid-c-arrays,-readability-isolate-declaration,-cert-err58-cpp"
+
+# Enabled check categories:
+# - readability-*: Code readability improvements (variable naming, complexity, etc.)
+# - cppcoreguidelines-*: C++ Core Guidelines compliance
+# - modernize-*: Modern C++ feature usage (auto, range-for, nullptr, etc.)
+# - performance-*: Performance-related issues and optimizations
+# - misc-*: Miscellaneous useful checks
+# - hicpp-*: High Integrity C++ guidelines
+# - concurrency-*: Thread safety and concurrency issues
+# - bugprone-*: Common bug patterns and potential issues
+# - cert-*: CERT secure coding guidelines
+
+# Disabled specific checks:
+# - magic-numbers: Allow numeric literals (common in applications)
+# - non-private-member-variables: Allow public struct members
+# - trailing-return-type: Don't enforce auto func() -> int style
+# - avoid-c-arrays: Allow C-style arrays where appropriate
+# - isolate-declaration: Allow multiple declarations per line
+# - cert-err58-cpp: Allow exceptions in global constructors
+
 CheckOptions:
-  # Naming conventions
+  # ===== NAMING CONVENTIONS =====
+  # These options enforce consistent identifier naming throughout the codebase
+  # Format: readability-identifier-naming.<IdentifierType><Property>
+  # Example: class my_class {} // lower_case style
+  # Class and member naming
+  # Example: class network_manager { int port_number_; };
   - { key: readability-identifier-naming.ClassCase, value: lower_case }
   - { key: readability-identifier-naming.ClassMemberCase, value: lower_case }
   - { key: readability-identifier-naming.PrivateMemberCase, value: lower_case }
-  - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.PrivateMemberSuffix, value: _ }      # private: int value_;
   - { key: readability-identifier-naming.ProtectedMemberCase, value: lower_case }
-  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }
+  - { key: readability-identifier-naming.ProtectedMemberSuffix, value: _ }    # protected: int count_;
 
+  # Enum naming
+  # Example: enum class color { red, green, blue };
   - { key: readability-identifier-naming.EnumCase, value: lower_case }
   - { key: readability-identifier-naming.EnumConstantCase, value: lower_case }
 
+  # Namespace naming
+  # Example: namespace my_project::utils { }
   - { key: readability-identifier-naming.NamespaceCase, value: lower_case }
 
+  # Struct naming
+  # Example: struct data_point { int x, y; };
   - { key: readability-identifier-naming.StructCase, value: lower_case }
 
+  # Type aliases and typedefs
+  # Example: using string_map_t = std::map<std::string, std::string>;
   - { key: readability-identifier-naming.TypedefCase, value: lower_case }
   - { key: readability-identifier-naming.TypeAliasCase, value: lower_case }
-  - { key: readability-identifier-naming.TypeAliasSuffix, value: _t }
+  - { key: readability-identifier-naming.TypeAliasSuffix, value: _t }       # suffix for type aliases
   
+  # Union naming
+  # Example: union data_union { int i; float f; };
   - { key: readability-identifier-naming.UnionCase, value: lower_case }
 
+  # Function and parameter naming
+  # Example: int calculate_sum(int first_number, int second_number) { }
   - { key: readability-identifier-naming.FunctionCase, value: lower_case }
   - { key: readability-identifier-naming.ParameterCase, value: lower_case }
   - { key: readability-identifier-naming.GlobalFunctionCase, value: lower_case }
 
+  # Variable naming
+  # Example: const int max_size = 100; constexpr double pi_value = 3.14159;
   - { key: readability-identifier-naming.LocalConstantCase, value: lower_case }
   - { key: readability-identifier-naming.ConstantCase, value: lower_case }
   - { key: readability-identifier-naming.ConstexprVariableCase, value: lower_case }
   - { key: readability-identifier-naming.LocalVariableCase, value: lower_case }
   - { key: readability-identifier-naming.VariableCase, value: lower_case }
 
+  # Global and static variable naming
+  # Example: static const int buffer_size = 1024; int global_counter = 0;
   - { key: readability-identifier-naming.GlobalVariableCase, value: lower_case }
   - { key: readability-identifier-naming.GlobalConstantCase, value: lower_case }
   - { key: readability-identifier-naming.StaticConstantCase, value: lower_case }
   - { key: readability-identifier-naming.StaticVariableCase, value: lower_case }
 
-  # Template parameters: match actual usage
+  # Template parameters: Follow standard C++ convention with T prefix
+  # Example: template<typename TContainer, int TSize> class buffer { };
   - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase }
   - { key: readability-identifier-naming.TemplateParameterPrefix, value: T }
   - { key: readability-identifier-naming.TypeTemplateParameterCase, value: CamelCase }
@@ -48,18 +96,43 @@ CheckOptions:
   - { key: readability-identifier-naming.ValueTemplateParameterCase, value: CamelCase }
   - { key: readability-identifier-naming.ValueTemplateParameterPrefix, value: T }
 
+  # Macro naming: Traditional ALL_CAPS style
+  # Example: #define MAX_BUFFER_SIZE 1024
   - { key: readability-identifier-naming.MacroDefinitionCase, value: UPPER_CASE }
 
-  # Performance and readability settings
+  # ===== PERFORMANCE AND READABILITY THRESHOLDS =====
+  # These settings control when clang-tidy warns about code complexity and size
+  # Function complexity: Warn when cognitive complexity exceeds 25
+  # Cognitive complexity measures how hard it is to understand a function
   - { key: readability-function-cognitive-complexity.Threshold, value: 25 }
-  - { key: readability-function-size.LineThreshold, value: 80 }
-  - { key: readability-function-size.StatementThreshold, value: 50 }
+  
+  # Function size limits
+  - { key: readability-function-size.LineThreshold, value: 80 }        # Max 80 lines per function
+  - { key: readability-function-size.StatementThreshold, value: 50 }   # Max 50 statements per function
+  
+  # Allow classes with only default destructor (common pattern)
+  # Example: class resource { ~resource() = default; };
   - { key: cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor, value: true }
-  - { key: modernize-loop-convert.MaxCopySize, value: 16 }
-  - { key: modernize-loop-convert.MinConfidence, value: reasonable }
-  - { key: performance-for-range-copy.WarnOnAllAutoCopies, value: true }
-  - { key: performance-inefficient-vector-operation.EnableProto, value: true }
+  
+  # Loop modernization settings
+  - { key: modernize-loop-convert.MaxCopySize, value: 16 }            # Convert to range-for if copy size ≤ 16 bytes
+  - { key: modernize-loop-convert.MinConfidence, value: reasonable }   # Confidence level for loop conversion
+  
+  # Performance warnings
+  - { key: performance-for-range-copy.WarnOnAllAutoCopies, value: true }      # Warn about expensive copies in range-for
+  - { key: performance-inefficient-vector-operation.EnableProto, value: true } # Enable protobuf-specific vector optimizations
 
+# ===== GLOBAL CONFIGURATION =====
+
+# Warnings as errors: Empty means treat all warnings as warnings, not errors
+# You can specify specific checks to treat as errors: "readability-*,performance-*"
 WarningsAsErrors: ""
+
+# Header filter: Only analyze headers matching this regex pattern
+# This limits analysis to project headers, excluding system/third-party headers
+# Example: Only analyze headers in the project directory
 HeaderFilterRegex: "saam/.*"
+
+# Code formatting: 'none' means clang-tidy won't apply formatting fixes
+# Other options: 'file' (use .clang-format), 'llvm', 'google', 'chromium', etc.
 FormatStyle: none

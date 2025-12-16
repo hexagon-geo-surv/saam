@@ -26,8 +26,8 @@ class unchecked_borrow_manager
         ref_base(const ref_base &other) = default;
 
         // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
-        ref_base(ref_base &&other) noexcept
-            : borrow_manager_(other.borrow_manager_)
+        ref_base(ref_base &&other) noexcept :
+            borrow_manager_(other.borrow_manager_)
         {
             // "this" gets always the same reference counter as "other", so the count that "other" looses, gains "this"
             // -> no modification on the counter needed
@@ -63,8 +63,8 @@ class unchecked_borrow_manager
             return false;
         }
 
-        ref_base(unchecked_borrow_manager &borrow_counter)
-            : borrow_manager_(&borrow_counter)
+        ref_base(unchecked_borrow_manager &borrow_counter) :
+            borrow_manager_(&borrow_counter)
         {
         }
 

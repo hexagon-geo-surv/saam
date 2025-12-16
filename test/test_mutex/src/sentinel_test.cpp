@@ -17,8 +17,8 @@ namespace saam::test
 class sentinel_test : public ::testing::Test
 {
   public:
-    sentinel_test()
-        : text_(std::in_place, std::string("Hello world"))
+    sentinel_test() :
+        text_(std::in_place, std::string("Hello world"))
     {
     }
 

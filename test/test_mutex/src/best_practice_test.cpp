@@ -38,14 +38,15 @@ class best_practice : public saam::enable_ref_from_this<best_practice>
     best_practice(int data)
         // Move the members under the control of the mutex
         // Return value optimization (RVO) may eliminate the cost of this function call
-        : synced_m_(members::create(data))
+        :
+        synced_m_(members::create(data))
     {
     }
 
     // The smart mutex is not movable (because the STL mutex is also not movable)
     // Move only the "members" from the other instance under the control of "this" smart mutex.
-    best_practice(best_practice &&other)
-        : synced_m_(std::move(*other.synced_m_.lock()))  // Locked "other" prevents modifications in "other" during the move operation
+    best_practice(best_practice &&other) :
+        synced_m_(std::move(*other.synced_m_.lock()))  // Locked "other" prevents modifications in "other" during the move operation
     {
     }
 

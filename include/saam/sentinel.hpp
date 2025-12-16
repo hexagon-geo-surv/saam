@@ -31,9 +31,9 @@ class sentinel
     // Conversion move constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, T *>
-    sentinel(sentinel<TOther> &&other) noexcept
-        : protected_instance_(std::move(other.protected_instance_))
-        , lock_(std::move(other.lock_))
+    sentinel(sentinel<TOther> &&other) noexcept :
+        protected_instance_(std::move(other.protected_instance_)),
+        lock_(std::move(other.lock_))
     {
     }
 
@@ -43,9 +43,9 @@ class sentinel
     sentinel(sentinel<const TOther> &&other) noexcept = delete;
 
     // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
-    sentinel(sentinel<T> &&other) noexcept
-        : protected_instance_(std::move(other.protected_instance_))
-        , lock_(std::move(other.lock_))
+    sentinel(sentinel<T> &&other) noexcept :
+        protected_instance_(std::move(other.protected_instance_)),
+        lock_(std::move(other.lock_))
     {
     }
 
@@ -127,9 +127,9 @@ class sentinel
         }
     }
 
-    sentinel(saam::ref<T> instance, std::unique_lock<std::shared_mutex> lock)
-        : protected_instance_(std::move(instance))
-        , lock_(std::move(lock))
+    sentinel(saam::ref<T> instance, std::unique_lock<std::shared_mutex> lock) :
+        protected_instance_(std::move(instance)),
+        lock_(std::move(lock))
     {
     }
 
@@ -146,9 +146,9 @@ class sentinel<const T>
     // Conversion copy constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
-    sentinel(const sentinel<const TOther> &other) noexcept
-        : protected_instance_(other.protected_instance_)
-        , lock_(other.shared_lock_)
+    sentinel(const sentinel<const TOther> &other) noexcept :
+        protected_instance_(other.protected_instance_),
+        lock_(other.shared_lock_)
     {
     }
 
@@ -158,9 +158,9 @@ class sentinel<const T>
     sentinel(const sentinel<TOther> &other) noexcept = delete;
 
     // The conversion copy constructor does not cover the copy constructor, so we need to implement it explicitly
-    sentinel(const sentinel<const T> &other)
-        : protected_instance_(other.protected_instance_)
-        , lock_(*other.lock_.mutex())
+    sentinel(const sentinel<const T> &other) :
+        protected_instance_(other.protected_instance_),
+        lock_(*other.lock_.mutex())
     {
     }
 
@@ -170,9 +170,9 @@ class sentinel<const T>
     // Conversion move constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
-    sentinel(sentinel<const TOther> &&other) noexcept
-        : protected_instance_(std::move(other.protected_instance_))
-        , lock_(std::move(other.shared_lock_))
+    sentinel(sentinel<const TOther> &&other) noexcept :
+        protected_instance_(std::move(other.protected_instance_)),
+        lock_(std::move(other.shared_lock_))
     {
     }
 
@@ -182,9 +182,9 @@ class sentinel<const T>
     sentinel(sentinel<TOther> &&other) noexcept = delete;
 
     // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
-    sentinel(sentinel<const T> &&other) noexcept
-        : protected_instance_(std::move(other.protected_instance_))
-        , lock_(std::move(other.lock_))
+    sentinel(sentinel<const T> &&other) noexcept :
+        protected_instance_(std::move(other.protected_instance_)),
+        lock_(std::move(other.lock_))
     {
     }
 
@@ -295,9 +295,9 @@ class sentinel<const T>
         }
     }
 
-    sentinel(saam::ref<const T> instance, std::shared_lock<std::shared_mutex> lock)
-        : protected_instance_(std::move(instance))
-        , lock_(std::move(lock))
+    sentinel(saam::ref<const T> instance, std::shared_lock<std::shared_mutex> lock) :
+        protected_instance_(std::move(instance)),
+        lock_(std::move(lock))
     {
     }
 

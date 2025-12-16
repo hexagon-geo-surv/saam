@@ -19,8 +19,8 @@ namespace demo
 class component_b : public saam::enable_ref_from_this<component_b>
 {
   public:
-    explicit component_b(saam::any_ptr<component_a> comp_a)
-        : comp_a_(std::move(comp_a))
+    explicit component_b(saam::any_ptr<component_a> comp_a) :
+        comp_a_(std::move(comp_a))
     {
     }
 
