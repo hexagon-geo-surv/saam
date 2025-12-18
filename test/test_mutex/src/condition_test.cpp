@@ -13,46 +13,31 @@
 namespace saam::test
 {
 
-class condition_test : public ::testing::Test
+TEST(condition_test, wait_on_condition)
 {
-  public:
-    void SetUp() override
-    {
-    }
-};
-
-TEST_F(condition_test, cond)
-{
-    saam::synchronized<double> synced_m(42.5);
+    saam::synchronized<int> synced_m(5);
     saam::condition value_changed(synced_m);
+    bool stop_thread = false;
 
     std::thread thread_worker([&]() {
-        for (;;)
+        for (; !stop_thread;)
         {
-            double new_value;
             {
                 auto locked_m = synced_m.lock_mut();
-                new_value = ++(*locked_m);
+                (*locked_m)++;
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             value_changed.notify();
-            if (new_value > 10)
-            {
-                break;
-            }
         }
     });
 
     {
         auto sentinel = synced_m.lock();
-        value_changed.wait(sentinel, [](const double &val) { return val > 5; }, {std::chrono::milliseconds(100)});
+        value_changed.wait(sentinel, [](const int &val) { return val > 5; }, {std::chrono::milliseconds(100)});
         ASSERT_GE(*sentinel, 5);
     }
 
-    // auto sentinel2 = synced_m.lock_mut();
-    // value_changed.wait(sentinel2, [](const int &val) { return val > 5; });
-    // *sentinel2 += 10;
-    // ASSERT_GE(*sentinel2, 15);
-
+    stop_thread = true;
     thread_worker.join();
 }
 
