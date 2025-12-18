@@ -34,16 +34,16 @@ TEST(tracked_dangling_test, return_dangling_const_reference)
     EXPECT_DEATH({ auto generated_text = generate_text(); }, ".*");
 }
 
-TEST(tracked_dangling_test, free_variable_before_ref)
+TEST(tracked_dangling_test, dangling_ref_outlives_var)
 {
-    auto free_variable_before_ref = []() {
+    auto dangling_ref_outlives_var = []() {
         // Reference is created and destroyed before the var variable
         std::optional<saam::ref<const std::string>> capitalized_text_ref;
         saam::var<std::string> text{std::in_place, "hello"};
         capitalized_text_ref = text;
     };
 
-    EXPECT_DEATH({ free_variable_before_ref(); }, ".*");
+    EXPECT_DEATH({ dangling_ref_outlives_var(); }, ".*");
 }
 
 TEST(tracked_dangling_test, return_dangling_reference_with_return_value_optimization)

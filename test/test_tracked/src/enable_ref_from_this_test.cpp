@@ -64,7 +64,7 @@ class my_class_only_post_constructor : public saam::enable_ref_from_this<my_clas
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
 };
 
-TEST(tracked_enable_ref_from_this_test, pre_ref)
+TEST(tracked_enable_ref_from_this_test, self_reference_not_released_before_destruction)
 {
     auto owning_self_reference_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
 
@@ -82,13 +82,15 @@ class my_class_with_post_constructor_and_pre_destructor :
 
     void pre_destructor()
     {
+        // Release the self reference before destruction, so that the instance does not contain
+        // a reference to self during destruction.
         self_.reset();
     }
 
     std::optional<saam::ref<my_class_with_post_constructor_and_pre_destructor>> self_;
 };
 
-TEST(tracked_enable_ref_from_this_test, pre2_ref)
+TEST(tracked_enable_ref_from_this_test, self_reference_released_before_destruction)
 {
     saam::var<my_class_with_post_constructor_and_pre_destructor> my_inst;
 }
