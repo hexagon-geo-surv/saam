@@ -25,16 +25,16 @@ TEST(condition_test, wait_on_condition)
             {
                 auto locked_m = synced_m.lock_mut();
                 (*locked_m)++;
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             value_changed.notify();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     });
 
     {
         auto sentinel = synced_m.lock();
-        value_changed.wait(sentinel, [](const int &val) { return val > 5; }, {std::chrono::milliseconds(100)});
-        ASSERT_GE(*sentinel, 5);
+        value_changed.wait(sentinel, [](int val) { return val > 5; }, {std::chrono::milliseconds(100)});
+        ASSERT_GT(*sentinel, 5);
     }
 
     stop_thread = true;
