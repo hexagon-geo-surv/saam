@@ -5,7 +5,7 @@
 #pragma once
 
 #include <saam/detail/basic_ref.hpp>
-#include <saam/detail/borrow_manager.hpp>
+#include <saam/detail/borrow_manager_traits.hpp>
 
 #include <utility>
 

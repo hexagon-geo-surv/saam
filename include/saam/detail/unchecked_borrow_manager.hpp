@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <saam/detail/basic_enable_ref_from_this.hpp>
-#include <saam/detail/basic_ref.hpp>
-#include <saam/detail/basic_var.hpp>
+#include <saam/detail/borrow_manager_traits.hpp>
 
 #include <typeinfo>
 
@@ -21,6 +19,18 @@ class unchecked_borrow_manager
     class ref_base
     {
       public:
+        [[nodiscard]] unchecked_borrow_manager *borrow_manager() const noexcept
+        {
+            return borrow_manager_;
+        }
+
+        // If the underlying raw pointer is managed reference (refrence counted)
+        [[nodiscard]] bool is_managed() const noexcept
+        {
+            return false;
+        }
+
+      protected:
         ref_base() = default;
 
         ref_base(const ref_base &other) = default;
@@ -52,17 +62,6 @@ class unchecked_borrow_manager
 
         ~ref_base() = default;
 
-        [[nodiscard]] unchecked_borrow_manager *borrow_manager() const noexcept
-        {
-            return borrow_manager_;
-        }
-
-        // If the underlying raw pointer is managed reference (refrence counted)
-        [[nodiscard]] bool is_managed() const noexcept
-        {
-            return false;
-        }
-
         ref_base(unchecked_borrow_manager &borrow_counter) :
             borrow_manager_(&borrow_counter)
         {
@@ -71,17 +70,22 @@ class unchecked_borrow_manager
         unchecked_borrow_manager *borrow_manager_ = nullptr;
     };
 
-    unchecked_borrow_manager() = default;
-
-    // reference counters are not copied/moved, each var counts its own references
+    // reference management is copied/moved, each var manages its own references
+    // regardless if it was assigned a another T instance
     unchecked_borrow_manager(const unchecked_borrow_manager &other) = delete;
     unchecked_borrow_manager(unchecked_borrow_manager &&other) noexcept = delete;
     unchecked_borrow_manager &operator=(const unchecked_borrow_manager &other) = delete;
     unchecked_borrow_manager &operator=(unchecked_borrow_manager &&other) noexcept = delete;
 
+  private:
+    unchecked_borrow_manager() = default;
+
     void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
     }
+
+    template <typename TOther, borrow_manager TOtherBorrowManager>
+    friend class basic_var;
 };
 
 }  // namespace saam

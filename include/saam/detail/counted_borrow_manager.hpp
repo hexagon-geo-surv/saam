@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <saam/detail/basic_enable_ref_from_this.hpp>
-#include <saam/detail/basic_ref.hpp>
-#include <saam/detail/basic_var.hpp>
+#include <saam/detail/borrow_manager_traits.hpp>
 
 #include <atomic>
 #include <cassert>
@@ -29,6 +27,18 @@ class counted_borrow_manager
     class ref_base
     {
       public:
+        // If the underlying raw pointer is managed reference (refrence counted)
+        [[nodiscard]] bool is_managed() const noexcept
+        {
+            return borrow_manager_ != nullptr;
+        }
+
+        [[nodiscard]] counted_borrow_manager *borrow_manager() const noexcept
+        {
+            return borrow_manager_;
+        }
+
+      protected:
         ref_base() = default;
 
         ref_base(counted_borrow_manager &borrow_manager) :
@@ -96,17 +106,6 @@ class counted_borrow_manager
             unregister_self();
         }
 
-        [[nodiscard]] counted_borrow_manager *borrow_manager() const noexcept
-        {
-            return borrow_manager_;
-        }
-
-        // If the underlying raw pointer is managed reference (refrence counted)
-        [[nodiscard]] bool is_managed() const noexcept
-        {
-            return borrow_manager_ != nullptr;
-        }
-
         void register_self() noexcept
         {
             if (!is_managed())
@@ -128,9 +127,11 @@ class counted_borrow_manager
             borrow_manager_ = nullptr;
         }
 
+      private:
         counted_borrow_manager *borrow_manager_ = nullptr;
     };
 
+  private:
     counted_borrow_manager() = default;
 
     // reference counters are not copied/moved, each var counts its own references
@@ -138,18 +139,6 @@ class counted_borrow_manager
     counted_borrow_manager(counted_borrow_manager &&other) noexcept = delete;
     counted_borrow_manager &operator=(const counted_borrow_manager &other) = delete;
     counted_borrow_manager &operator=(counted_borrow_manager &&other) noexcept = delete;
-
-    void register_reference() const
-    {
-        counter_++;
-    }
-
-    void unregister_reference() const
-    {
-        const auto prev_value = counter_--;
-        // Reference count cannot go below zero, so the previous value must be greater than zero
-        assert(prev_value > 0);
-    }
 
     void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
@@ -164,7 +153,21 @@ class counted_borrow_manager
         }
     }
 
-  private:
+    void register_reference() const
+    {
+        counter_++;
+    }
+
+    void unregister_reference() const
+    {
+        const auto prev_value = counter_--;
+        // Reference count cannot go below zero, so the previous value must be greater than zero
+        assert(prev_value > 0);
+    }
+
+    template <typename TOther, borrow_manager TOtherBorrowManager>
+    friend class basic_var;
+
     // maxint the counter was closed, no more borrows are allowed
     // 0 counter means that the instance is not borrowed
     // counter > 0 means that the instance is borrowed

@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <saam/detail/borrow_manager_traits.hpp>
+
 #include <cassert>
 #include <mutex>
 #include <stacktrace>
@@ -27,6 +29,17 @@ class tracked_borrow_manager
     class ref_base
     {
       public:
+        [[nodiscard]] bool is_managed() const
+        {
+            return borrow_manager_ != nullptr;
+        }
+
+        [[nodiscard]] tracked_borrow_manager *borrow_manager() const noexcept
+        {
+            return borrow_manager_;
+        }
+
+      protected:
         ref_base() = default;
 
         ref_base(tracked_borrow_manager &borrow_manager) :
@@ -94,16 +107,6 @@ class tracked_borrow_manager
             unregister_self();
         }
 
-        [[nodiscard]] bool is_managed() const
-        {
-            return borrow_manager_ != nullptr;
-        }
-
-        [[nodiscard]] tracked_borrow_manager *borrow_manager() const noexcept
-        {
-            return borrow_manager_;
-        }
-
         void register_self()
         {
             if (!is_managed())
@@ -131,27 +134,22 @@ class tracked_borrow_manager
             stacktrace_ = std::stacktrace();
         }
 
+        friend class tracked_borrow_manager;
+
         ref_base *next_ = nullptr;
         std::stacktrace stacktrace_;
         tracked_borrow_manager *borrow_manager_ = nullptr;
     };
 
-    void register_ref(ref_base &ref)
-    {
-        std::lock_guard guard(mutex_);
-        // Attach the new link to the beginning of the chain - we saved a walk to the end of the chain
-        // Moreover, it is likely that new refs will die earlier than old ones
-        ref.next_ = ref_chain_root_;
-        ref_chain_root_ = &ref;
-    }
+    // reference management is copied/moved, each var manages its own references
+    // regardless if it was assigned a another T instance
+    tracked_borrow_manager(const tracked_borrow_manager &other) = delete;
+    tracked_borrow_manager(tracked_borrow_manager &&other) noexcept = delete;
+    tracked_borrow_manager &operator=(const tracked_borrow_manager &other) = delete;
+    tracked_borrow_manager &operator=(tracked_borrow_manager &&other) noexcept = delete;
 
-    void unregister_ref(ref_base &linked_ref_to_detach)
-    {
-        std::lock_guard guard(mutex_);
-
-        auto *previous_link_ptr = get_previous_ptr_in_chain(linked_ref_to_detach);
-        *previous_link_ptr = (*previous_link_ptr)->next_;
-    }
+  private:
+    tracked_borrow_manager() = default;
 
     void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
@@ -173,7 +171,23 @@ class tracked_borrow_manager
         }
     }
 
-  private:
+    void register_ref(ref_base &ref)
+    {
+        std::lock_guard guard(mutex_);
+        // Attach the new link to the beginning of the chain - we saved a walk to the end of the chain
+        // Moreover, it is likely that new refs will die earlier than old ones
+        ref.next_ = ref_chain_root_;
+        ref_chain_root_ = &ref;
+    }
+
+    void unregister_ref(ref_base &linked_ref_to_detach)
+    {
+        std::lock_guard guard(mutex_);
+
+        auto *previous_link_ptr = get_previous_ptr_in_chain(linked_ref_to_detach);
+        *previous_link_ptr = (*previous_link_ptr)->next_;
+    }
+
     ref_base **get_previous_ptr_in_chain(ref_base &ref_to_detach)
     {
         auto *previous_link_ptr = &ref_chain_root_;
@@ -192,6 +206,9 @@ class tracked_borrow_manager
             previous_link_ptr = &current_link->next_;
         }
     }
+
+    template <typename TOther, borrow_manager TOtherBorrowManager>
+    friend class basic_var;
 
     mutable std::mutex mutex_;
     ref_base *ref_chain_root_ = nullptr;
