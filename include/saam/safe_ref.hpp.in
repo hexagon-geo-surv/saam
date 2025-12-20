@@ -10,7 +10,7 @@
 // If the mode is not defined from the compiler command line,
 // then fall back to the mode coming from Conan option
 #ifndef SAAM_BORROW_CHECKING_MODE
-#define SAAM_BORROW_CHECKING_MODE @SAAM_BORROW_CHECKING_MODE_CMAKE @
+#define SAAM_BORROW_CHECKING_MODE @SAAM_BORROW_CHECKING_MODE_CMAKE@
 #endif
 
 #if SAAM_BORROW_CHECKING_MODE == 0
