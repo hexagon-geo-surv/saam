@@ -159,7 +159,7 @@ The `saam` library detects this during runtime and panics when it happens.
 ```cpp
 saam::ref<std::string> generate_text() 
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
     return text;
 }
 
@@ -171,7 +171,7 @@ Another scenario is when the reference is created earlier than the variable. As 
 ```cpp
 std::optional<saam::ref<const std::string>> maybe_text_ref;
 
-saam::var<std::string> text{std::in_place, "hello"};
+saam::var<std::string> text{"hello"};
 
 maybe_text_ref = text;
 ```
@@ -183,12 +183,12 @@ This reallocation invalidates existing references and this is detected by `saam`
 std::vector<saam::var<std::string>> vec;
 vec.reserve(1); // Allocate an internal buffer for only one element
 
-vec.emplace_back(std::in_place, "hello");
+vec.emplace_back("hello");
 saam::ref<std::string> text_ref = vec.back();
 
 // The new element does not fit into the current buffer (size of 1 at the moment), buffer reallocation is needed.
 // The reallocation invalidates the reference (text_ref). -> PANIC!
-vec.emplace_back(std::in_place, "world");
+vec.emplace_back("world");
 ```
 
 In more complex situations, when the reference is stored in classes/containers/callbacks,
@@ -385,7 +385,7 @@ std::size_t get_text_length(const std::string& text)
     return text.length();
 }
 
-saam::var<std::string> text{std::in_place, "hello"};
+saam::var<std::string> text{"hello"};
 
 // Leaving the reference checks must be explicit
 auto generated_text = get_text_length(static_cast<const std::string&>(text.borrow()));

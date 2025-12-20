@@ -60,7 +60,6 @@ CheckOptions:
   # Example: using string_map_t = std::map<std::string, std::string>;
   - { key: readability-identifier-naming.TypedefCase, value: lower_case }
   - { key: readability-identifier-naming.TypeAliasCase, value: lower_case }
-  - { key: readability-identifier-naming.TypeAliasSuffix, value: _t }       # suffix for type aliases
   
   # Union naming
   # Example: union data_union { int i; float f; };
@@ -87,14 +86,14 @@ CheckOptions:
   - { key: readability-identifier-naming.StaticConstantCase, value: lower_case }
   - { key: readability-identifier-naming.StaticVariableCase, value: lower_case }
 
-  # Template parameters: Follow standard C++ convention with T prefix
-  # Example: template<typename TContainer, int TSize> class buffer { };
+  # Template parameters: Allow both single letters (T, U, V) and T-prefixed names
+  # Example: template<typename T, typename U, typename TContainer> class buffer { };
   - { key: readability-identifier-naming.TemplateParameterCase, value: CamelCase }
-  - { key: readability-identifier-naming.TemplateParameterPrefix, value: T }
+  - { key: readability-identifier-naming.TemplateParameterIgnoredRegexp, value: "^[T-Z]$" }
   - { key: readability-identifier-naming.TypeTemplateParameterCase, value: CamelCase }
-  - { key: readability-identifier-naming.TypeTemplateParameterPrefix, value: T }
+  - { key: readability-identifier-naming.TypeTemplateParameterIgnoredRegexp, value: "^[T-Z]$" }
   - { key: readability-identifier-naming.ValueTemplateParameterCase, value: CamelCase }
-  - { key: readability-identifier-naming.ValueTemplateParameterPrefix, value: T }
+  - { key: readability-identifier-naming.ValueTemplateParameterIgnoredRegexp, value: "^[T-Z]$" }
 
   # Macro naming: Traditional ALL_CAPS style
   # Example: #define MAX_BUFFER_SIZE 1024
