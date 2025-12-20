@@ -49,8 +49,6 @@ class basic_var
     [[nodiscard]] operator T &() const = delete;
 
   private:
-    void configure_enable_ref_from_this();
-
     void call_post_constructor();
 
     template <typename TOther, borrow_manager TOtherBorrowManager>
