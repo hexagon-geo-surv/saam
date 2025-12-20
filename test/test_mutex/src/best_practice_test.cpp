@@ -78,7 +78,7 @@ class best_practice : private base_a, private base_b
     void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
         borrow_manager_ = &borrow_manager;
-        // Porpagate the post_constructor call to base classes
+        // Propagate the post_constructor call to base classes
         base_a::post_constructor(borrow_manager);
         base_b::post_constructor(borrow_manager);
     }
