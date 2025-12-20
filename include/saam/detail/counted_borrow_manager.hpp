@@ -136,6 +136,7 @@ class counted_borrow_manager
     counted_borrow_manager(counted_borrow_manager &&other) noexcept = delete;
     counted_borrow_manager &operator=(const counted_borrow_manager &other) = delete;
     counted_borrow_manager &operator=(counted_borrow_manager &&other) noexcept = delete;
+    ~counted_borrow_manager() = default;
 
     void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {

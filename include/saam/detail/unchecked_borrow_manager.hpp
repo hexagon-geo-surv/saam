@@ -23,7 +23,7 @@ class unchecked_borrow_manager
         }
 
         // If the underlying raw pointer is managed reference (refrence counted)
-        [[nodiscard]] bool is_managed() const noexcept
+        [[nodiscard]] static bool is_managed() noexcept
         {
             return false;
         }
@@ -65,6 +65,7 @@ class unchecked_borrow_manager
         {
         }
 
+      private:
         unchecked_borrow_manager *borrow_manager_ = nullptr;
     };
 
@@ -74,6 +75,7 @@ class unchecked_borrow_manager
     unchecked_borrow_manager(unchecked_borrow_manager &&other) noexcept = delete;
     unchecked_borrow_manager &operator=(const unchecked_borrow_manager &other) = delete;
     unchecked_borrow_manager &operator=(unchecked_borrow_manager &&other) noexcept = delete;
+    ~unchecked_borrow_manager() = default;
 
   private:
     unchecked_borrow_manager() = default;

@@ -92,7 +92,7 @@ TEST(unchecked_legacy_test, const_cpp_var_to_const_ref)
 
 TEST(unchecked_legacy_test, var_to_cpp_reference_cast)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     // Casting to C++ reference is meant only for backwards compatibility with API that do not support saam,
     // therefore it is always an explicit operation is needed to confirm this unsafe step
@@ -105,7 +105,7 @@ TEST(unchecked_legacy_test, var_to_cpp_reference_cast)
 
 TEST(unchecked_legacy_test, var_const_to_cpp_reference_cast)
 {
-    saam::var<const std::string> text(std::in_place, "Hello world");
+    saam::var<const std::string> text("Hello world");
 
     // Casting to C++ reference is meant only for backwards compatibility with API that do not support saam,
     // therefore it is always an explicit operation is needed to confirm this unsafe step

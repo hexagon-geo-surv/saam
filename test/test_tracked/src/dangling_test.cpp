@@ -17,7 +17,7 @@ namespace saam::test
 TEST(tracked_dangling_test, return_dangling_reference)
 {
     auto generate_text = []() -> saam::ref<std::string> {
-        saam::var<std::string> text(std::in_place, "Hello world");
+        saam::var<std::string> text("Hello world");
         return text;
     };
 
@@ -27,7 +27,7 @@ TEST(tracked_dangling_test, return_dangling_reference)
 TEST(tracked_dangling_test, return_dangling_const_reference)
 {
     auto generate_text = []() -> saam::ref<const std::string> {
-        saam::var<std::string> text(std::in_place, "Hello world");
+        saam::var<std::string> text("Hello world");
         return text;
     };
 
@@ -39,7 +39,7 @@ TEST(tracked_dangling_test, dangling_ref_outlives_var)
     auto dangling_ref_outlives_var = []() {
         // Reference is created and destroyed before the var variable
         std::optional<saam::ref<const std::string>> capitalized_text_ref;
-        saam::var<std::string> text{std::in_place, "hello"};
+        saam::var<std::string> text{"hello"};
         capitalized_text_ref = text;
     };
 
@@ -49,13 +49,13 @@ TEST(tracked_dangling_test, dangling_ref_outlives_var)
 TEST(tracked_dangling_test, return_dangling_reference_with_return_value_optimization)
 {
     auto return_dangling_reference_with_return_value_optimization = []() {
-        saam::var<std::string> text{std::in_place, "hello"};
+        saam::var<std::string> text{"hello"};
 
         std::optional<saam::ref<const std::string>> capitalized_text_ref;
 
         auto capitalize = [&capitalized_text_ref](saam::ref<const std::string> text) {
             // This variable does not exist here, but at the caller side (RVO)
-            saam::var<std::string> capitalized_text(std::in_place, *text);
+            saam::var<std::string> capitalized_text(*text);
             capitalized_text_ref = capitalized_text;
             return capitalized_text;
         };
@@ -72,11 +72,11 @@ TEST(tracked_dangling_test, container_invalidates_reference)
 
     vec.reserve(1);
 
-    vec.emplace_back(std::in_place, "hello");
+    vec.emplace_back("hello");
     saam::ref<std::string> text_ref = vec.back();
 
     // Adding a new element reallocates the internal buffer and invalidates the reference
-    EXPECT_DEATH({ vec.emplace_back(std::in_place, "world"); }, ".*");
+    EXPECT_DEATH({ vec.emplace_back("world"); }, ".*");
 }
 
 }  // namespace saam::test

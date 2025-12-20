@@ -22,7 +22,7 @@ class basic_var
     basic_var();
 
     template <typename... Args>
-    explicit basic_var(std::in_place_t, Args &&...args);
+    explicit basic_var(Args &&...args);
 
     explicit basic_var(const T &instance);
 

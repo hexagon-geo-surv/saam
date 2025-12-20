@@ -38,7 +38,7 @@ class my_class
 
 TEST(tracked_enable_ref_from_this_test, happy_flow)
 {
-    saam::var<my_class> my_instance(std::in_place);
+    saam::var<my_class> my_instance;
 
     auto callback = my_instance.borrow()->generate_callback();
 
@@ -50,7 +50,7 @@ TEST(tracked_enable_ref_from_this_test, dangling_ref)
     auto dangling_ref = []() {
         std::function<void(int)> callback;
 
-        saam::var<my_class> my_instance(std::in_place);
+        saam::var<my_class> my_instance;
         callback = my_instance.borrow()->generate_callback();
 
         // my_instance is gone at this point, so the callback contains a dangling reference

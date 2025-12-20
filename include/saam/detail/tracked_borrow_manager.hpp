@@ -81,7 +81,7 @@ class tracked_borrow_manager
             return *this;
         }
 
-        ref_base &operator=(ref_base &&other)
+        ref_base &operator=(ref_base &&other) noexcept
         {
             if (this == &other)
             {
@@ -134,6 +134,7 @@ class tracked_borrow_manager
             stacktrace_ = std::stacktrace();
         }
 
+      private:
         friend class tracked_borrow_manager;
 
         ref_base *next_ = nullptr;
@@ -147,6 +148,7 @@ class tracked_borrow_manager
     tracked_borrow_manager(tracked_borrow_manager &&other) noexcept = delete;
     tracked_borrow_manager &operator=(const tracked_borrow_manager &other) = delete;
     tracked_borrow_manager &operator=(tracked_borrow_manager &&other) noexcept = delete;
+    ~tracked_borrow_manager() = default;
 
     void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
