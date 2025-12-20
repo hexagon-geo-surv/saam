@@ -148,9 +148,6 @@ class tracked_borrow_manager
     tracked_borrow_manager &operator=(const tracked_borrow_manager &other) = delete;
     tracked_borrow_manager &operator=(tracked_borrow_manager &&other) noexcept = delete;
 
-  private:
-    tracked_borrow_manager() = default;
-
     void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
     {
         std::lock_guard guard(mutex_);
@@ -170,6 +167,9 @@ class tracked_borrow_manager
             abort();
         }
     }
+
+  private:
+    tracked_borrow_manager() = default;
 
     void register_ref(ref_base &ref)
     {

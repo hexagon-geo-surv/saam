@@ -14,13 +14,13 @@ template <typename TBorrowManager>
 concept borrow_manager = requires(TBorrowManager instance, typename TBorrowManager::ref_base ref_base) {
     typename TBorrowManager::ref_base;
 
-    { ref_base.borrow_manager() };
+    { ref_base.borrow_manager() } -> std::convertible_to<TBorrowManager *>;
     { ref_base.is_managed() } -> std::convertible_to<bool>;
 };
 
-template <typename T, typename TBorrowManager>
+template <typename TBorrowManager>
 concept can_check_dangling_references = requires(TBorrowManager instance) {
-    { instance.verify_dangling_references(typeid(T), static_cast<T *>(nullptr)) } -> std::same_as<void>;
+    { instance.verify_dangling_references(typeid(int), nullptr) };
 };
 
 }  // namespace saam

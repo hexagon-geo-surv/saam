@@ -131,9 +131,6 @@ class counted_borrow_manager
         counted_borrow_manager *borrow_manager_ = nullptr;
     };
 
-  private:
-    counted_borrow_manager() = default;
-
     // reference counters are not copied/moved, each var counts its own references
     counted_borrow_manager(const counted_borrow_manager &other) = delete;
     counted_borrow_manager(counted_borrow_manager &&other) noexcept = delete;
@@ -152,6 +149,9 @@ class counted_borrow_manager
             abort();
         }
     }
+
+  private:
+    counted_borrow_manager() = default;
 
     void register_reference() const
     {
