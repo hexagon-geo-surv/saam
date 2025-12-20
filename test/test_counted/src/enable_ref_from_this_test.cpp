@@ -8,21 +8,10 @@
 #include <gtest/gtest.h>
 
 #include <optional>
-#include <regex>
 #include <utility>
 
 namespace saam::test
 {
-
-class counted_enable_ref_from_this_test : public ::testing::Test
-{
-  public:
-    void SetUp() override
-    {
-        global_panic_handler.set_panic_action(std::function<void(std::string_view)>());
-        global_panic_handler.clear_panic();
-    }
-};
 
 class my_class : public saam::enable_ref_from_this<my_class>
 {
@@ -41,31 +30,27 @@ class my_class : public saam::enable_ref_from_this<my_class>
     int increment_ = 1;
 };
 
-TEST_F(counted_enable_ref_from_this_test, happy_flow)
+TEST(counted_enable_ref_from_this_test, happy_flow)
 {
     saam::var<my_class> my_instance(std::in_place);
 
     auto callback = my_instance.borrow()->generate_callback();
 
     ASSERT_EQ(int(6), callback(5));
-
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
 }
 
-TEST_F(counted_enable_ref_from_this_test, dangling_ref)
+TEST(counted_enable_ref_from_this_test, dangling_ref)
 {
-    std::function<void(int)> callback;
-    {
+    auto dangling_ref = []() {
+        std::function<void(int)> callback;
+
         saam::var<my_class> my_instance(std::in_place);
         callback = my_instance.borrow()->generate_callback();
 
         // my_instance is gone at this point, so the callback contains a dangling reference
-    }
+    };
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
-    const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
-    ASSERT_TRUE(panic_message_is_correct);
+    EXPECT_DEATH(dangling_ref(), ".*");
 }
 
 class my_class_only_post_constructor : public saam::enable_ref_from_this<my_class_only_post_constructor>
@@ -79,20 +64,15 @@ class my_class_only_post_constructor : public saam::enable_ref_from_this<my_clas
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
 };
 
-TEST_F(counted_enable_ref_from_this_test, pre_ref)
+TEST(counted_enable_ref_from_this_test, self_reference_not_released_before_destruction)
 {
-    {
-        saam::var<my_class_only_post_constructor> mc;
-    }
+    auto owning_self_reference_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
 
-    ASSERT_TRUE(global_panic_handler.is_panic_active());
-    const bool panic_message_is_correct =
-        std::regex_match(global_panic_handler.panic_message().data(), std::regex("^Borrow checked variable of type[.\\s\\S]*"));
-    ASSERT_TRUE(panic_message_is_correct);
+    EXPECT_DEATH(owning_self_reference_at_destruction(), ".*");
 }
 
-class my_class_with_post_constructor_and_pre_destructor
-    : public saam::enable_ref_from_this<my_class_with_post_constructor_and_pre_destructor>
+class my_class_with_post_constructor_and_pre_destructor :
+    public saam::enable_ref_from_this<my_class_with_post_constructor_and_pre_destructor>
 {
   public:
     void post_constructor()
@@ -102,19 +82,17 @@ class my_class_with_post_constructor_and_pre_destructor
 
     void pre_destructor()
     {
+        // Release the self reference before destruction, so that the instance does not contain
+        // a reference to self during destruction.
         self_.reset();
     }
 
     std::optional<saam::ref<my_class_with_post_constructor_and_pre_destructor>> self_;
 };
 
-TEST_F(counted_enable_ref_from_this_test, pre2_ref)
+TEST(counted_enable_ref_from_this_test, self_reference_released_before_destruction)
 {
-    {
-        saam::var<my_class_with_post_constructor_and_pre_destructor> mc;
-    }
-
-    ASSERT_FALSE(global_panic_handler.is_panic_active());
+    saam::var<my_class_with_post_constructor_and_pre_destructor> my_inst;
 }
 
 }  // namespace saam::test

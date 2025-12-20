@@ -20,11 +20,12 @@ add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 #
 # Dependencies
 #
-# find_package(<dependency> REQUIRED)
 
 #
 # Compiler
 #
+
+message(STATUS "saam borrow checking mode: ${SAAM_BORROW_CHECKING_MODE_CMAKE}")
 
 set (PRJ_INCLUDE_DIR_STEM ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set (PRJ_INCLUDE_DIR ${PRJ_INCLUDE_DIR_STEM}/${PROJECT_NAME})
@@ -59,11 +60,6 @@ target_include_directories(${PROJECT_NAME}
 
 # Define minimum C++ standard - unless it is defined in the toolchain
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
-
-target_link_libraries(${PROJECT_NAME}
-    INTERFACE
-    # <dependency>::<dependency>
-)
 
 #
 # Installation

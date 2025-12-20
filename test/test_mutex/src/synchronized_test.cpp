@@ -15,11 +15,6 @@ namespace saam::test
 
 class synchronized_test : public ::testing::Test
 {
-  public:
-    void SetUp() override
-    {
-        global_panic_handler.clear_panic();
-    }
 };
 
 TEST_F(synchronized_test, instance_move_creation)

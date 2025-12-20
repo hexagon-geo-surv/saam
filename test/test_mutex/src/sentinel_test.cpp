@@ -17,14 +17,9 @@ namespace saam::test
 class sentinel_test : public ::testing::Test
 {
   public:
-    sentinel_test()
-        : text_(std::in_place, std::string("Hello world"))
+    sentinel_test() :
+        text_(std::in_place, std::string("Hello world"))
     {
-    }
-
-    void SetUp() override
-    {
-        global_panic_handler.clear_panic();
     }
 
     saam::synchronized<std::string> text_;

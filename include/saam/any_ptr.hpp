@@ -23,29 +23,29 @@ class any_ptr
   public:
     any_ptr() = default;
 
-    explicit any_ptr(std::function<T *()> accessor)
-        : accessor_(std::move(accessor))
+    explicit any_ptr(std::function<T *()> accessor) :
+        accessor_(std::move(accessor))
     {
     }
 
     template <typename U>
         requires std::is_convertible_v<U *, T *>
-    explicit any_ptr(std::function<U *()> accessor)
-        : accessor_(std::move(accessor))
+    explicit any_ptr(std::function<U *()> accessor) :
+        accessor_(std::move(accessor))
     {
     }
 
     template <typename U>
         requires std::is_convertible_v<U *, T *>
-    any_ptr(const any_ptr<U> &other)
-        : accessor_(other.accessor_)
+    any_ptr(const any_ptr<U> &other) :
+        accessor_(other.accessor_)
     {
     }
 
     template <typename U>
         requires std::is_convertible_v<U *, T *>
-    any_ptr(any_ptr<U> &&other)
-        : accessor_(std::move(other.accessor_))
+    any_ptr(any_ptr<U> &&other) :
+        accessor_(std::move(other.accessor_))
     {
     }
 

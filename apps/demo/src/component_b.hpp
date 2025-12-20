@@ -7,9 +7,7 @@
 #include "component_a.hpp"
 
 #include <saam/any_ptr.hpp>
-#include <saam/enable_ref_from_this.hpp>
-#include <saam/ref.hpp>
-#include <saam/var.hpp>
+#include <saam/safe_ref.hpp>
 
 #include <functional>
 #include <iostream>
@@ -21,8 +19,8 @@ namespace demo
 class component_b : public saam::enable_ref_from_this<component_b>
 {
   public:
-    explicit component_b(saam::any_ptr<component_a> comp_a)
-        : comp_a_(std::move(comp_a))
+    explicit component_b(saam::any_ptr<component_a> comp_a) :
+        comp_a_(std::move(comp_a))
     {
     }
 
@@ -51,6 +49,7 @@ class component_b : public saam::enable_ref_from_this<component_b>
     {
         if (comp_a_)
         {
+            // NOTE: Comment out this line to provoke a dangling reference panic
             // release the callbacks, so that we get rid of the self references in there
             comp_a_->register_callback({});
         }

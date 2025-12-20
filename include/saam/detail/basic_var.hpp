@@ -61,8 +61,9 @@ class basic_var
     template <typename TOther, borrow_manager TOtherBorrowManager>
     friend class basic_ref;
 
-    mutable TBorrowManager borrow_manager_;
+    // Keeping the instance at the first position ensures that the basic_var and its instance_ member have the same address.
     T instance_;
+    mutable TBorrowManager borrow_manager_;
 };
 
 }  // namespace saam

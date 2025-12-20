@@ -33,7 +33,7 @@ target_include_directories(${PROJECT_NAME}
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
-        SAAM_BORROW_CHECKING_MODE=COUNTED
+        SAAM_BORROW_CHECKING_MODE=0
 )
 
 #

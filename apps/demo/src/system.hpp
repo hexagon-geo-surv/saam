@@ -7,7 +7,7 @@
 #include "component_a.hpp"
 #include "component_b.hpp"
 
-#include <saam/var.hpp>
+#include <saam/safe_ref.hpp>
 
 #include <utility>
 
@@ -17,12 +17,9 @@ namespace demo
 class system
 {
   public:
-    system()
-        : component_b_(std::in_place, make_any_ptr(component_a_))
+    system() :
+        component_b_(std::in_place, make_any_ptr(component_a_))
     {
-        // Fine tune the stack tracing for each individual instances
-        // component_a_.enable_instance_stack_tracking(true);
-        // component_b_.enable_instance_stack_tracking(true);
     }
 
     void run()

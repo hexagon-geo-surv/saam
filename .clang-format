@@ -1,23 +1,228 @@
-# SPDX-FileCopyrightText: Leica Geosystems AG
-#
-# SPDX-License-Identifier: MIT
+# Clang-Format configuration file
+# This file defines code formatting rules for consistent C++ code style
+# 
+# Example usage:
+#   clang-format --style=file src/main.cpp
+#   OR: clang-format -i src/*.cpp (in-place formatting)
 
 ---
+# Base style: Uses Microsoft's coding standard as foundation
+# Other options: LLVM, Google, Chromium, Mozilla, WebKit
 BasedOnStyle: Microsoft   
 ---
-Language: Cpp
-Standard: c++20
 
+# Target language and standard
+Language: Cpp
+# Enable C++20 specific formatting rules
+Standard: c++20                    
+
+# Qualifier positioning: const/volatile placement
+# Example: const int* ptr (Left) vs int const* ptr (Right)
 QualifierAlignment: Left
 
-# Line break limit in characters
+# ===== LINE LENGTH AND BREAKING =====
+# Maximum line length before forcing line breaks
 ColumnLimit: 140
 
+# ===== TEMPLATE AND CLASS FORMATTING =====
+# Always break after template declaration
+# Example: template<typename T>
+#          class MyClass { };  (instead of template<typename T> class MyClass { };)
 AlwaysBreakTemplateDeclarations: Yes
-BreakConstructorInitializers: BeforeComma
+
+# Constructor initializer list formatting - always start on new line
+# Comma at end of each initializer line (trailing comma style)
+# Example: Constructor() :
+#              member1_(value1),  <- comma at end of line
+#              member2_(value2)
+#          {
+#          }
+BreakConstructorInitializers: AfterColon
+
+# Force constructor initializers to always use separate lines, even for single elements
+# Example: Constructor()  
+#              : single_member_(value)  <- forced to separate line even when single
+#          {
+#          }  (instead of Constructor() : single_member_(value) {})
+PackConstructorInitializers: Never
+
+# Inheritance list formatting - trailing comma style
+# Example: class Derived :
+#              public Base1,  <- comma at end of line
+#              public Base2
+#          {
+#          };
+BreakInheritanceList: AfterColon
+
+# Add empty lines before access modifiers when it improves logical grouping
+# Example: class MyClass
+#          {
+#              void func1();
+#          
+#          private:  // <- empty line added here
+#              int member_;
+#          };
+EmptyLineBeforeAccessModifier: LogicalBlock
+
+# ===== NAMESPACE AND COMMENT FORMATTING =====
+# Automatically fix namespace closing comments
+# Example: namespace my_namespace 
+#          {
+#          } // namespace my_namespace  <- automatically added/fixed
 FixNamespaceComments: Yes
+
+# Number of spaces before trailing comments
+# Example: int x = 5;  // This comment has 2 spaces before it
 SpacesBeforeTrailingComments: 2
-InsertNewlineAtEOF: true
+
+# Don't indent contents of namespaces
+# Example: namespace my_ns 
+#          {
+#          class MyClass  // <- not indented
+#          {
+#          };
+#          }
+NamespaceIndentation: None
+
+# ===== BRACE WRAPPING =====
+# Control where braces are placed for different constructs
+BreakBeforeBraces: Custom
+BraceWrapping:
+  # Place namespace opening brace on new line
+  # Example: namespace my_namespace
+  #          {  <- brace on new line
+  #              // content
+  #          }
+  AfterNamespace: true
+  
+  # Place class opening brace on new line
+  # Example: class MyClass
+  #          {  <- brace on new line
+  #          public:
+  #              void method();
+  #          };
+  AfterClass: true
+  
+  # Place struct opening brace on new line
+  # Example: struct MyStruct
+  #          {  <- brace on new line
+  #              int member;
+  #          };
+  AfterStruct: true
+  
+  # Place function opening brace on new line
+  # Example: void myFunction()
+  #          {  <- brace on new line
+  #              // function body
+  #          }
+  AfterFunction: true
+  
+  # Place control statement opening brace on new line (if, for, while, etc.)
+  # Example: if (condition)
+  #          {  <- brace on new line
+  #              // if body
+  #          }
+  # Example: for (int i = 0; i < 10; ++i)
+  #          {  <- brace on new line
+  #              // loop body
+  #          }
+  AfterControlStatement: Always
+
+# ===== BRACE AND BLOCK FORMATTING =====
+# Never allow empty blocks on single line (including constructors)
+# Example: Constructor()  
+#              : member_(value)
+#          {              <- opening brace on new line after initializer
+#          }              <- closing brace on separate line
+# NOT: Constructor() : member_(value) {}
+AllowShortBlocksOnASingleLine: Never
+
+# Ensure braces are not removed from single-statement control structures
+# This prevents removal of braces even for single statements
+# Example: Always keep braces around single statements in if/for/while
+RemoveBracesLLVM: false
+
+# ===== FUNCTION AND PARAMETER FORMATTING =====
+# Don't pack multiple arguments on same line
+# Example: function_call(arg1,
+#                       arg2,
+#                       arg3);  (instead of function_call(arg1, arg2, arg3);)
 BinPackArguments: false
+
+# Don't pack multiple parameters on same line  
+# Example: void func(int param1,
+#                   int param2,
+#                   int param3);
 BinPackParameters: false
+
+# Align parameters/arguments with opening bracket
+# Example: function_call(parameter1,
+#                       parameter2);  <- aligned with opening parenthesis
 AlignAfterOpenBracket: Align
+
+# Never allow short functions on single line
+# Example: void func()
+#          {
+#              return;
+#          }  (instead of void func() { return; })
+AllowShortFunctionsOnASingleLine: None
+
+# Never allow short if statements on single line - always use braces
+# Example: if (condition)
+#          {
+#              action();
+#          }  (instead of if (condition) action(); or if (condition) { action(); })
+AllowShortIfStatementsOnASingleLine: Never
+
+# Never allow short loops on single line - always use braces
+# Example: for (int i = 0; i < 10; ++i)
+#          {
+#              process(i);
+#          }  (instead of for (int i = 0; i < 10; ++i) process(i); or for (...) { process(i); })
+AllowShortLoopsOnASingleLine: false
+
+# ===== INCLUDE FORMATTING =====
+# Sort #include statements, ignoring case
+# Example: #include <algorithm> comes before #include <Vector>
+SortIncludes: CaseInsensitive
+
+# Group includes into blocks separated by empty lines
+IncludeBlocks: Regroup
+
+# Include priority order (lower number = higher priority, appears first)
+IncludeCategories:
+  # Priority 1: Implementation headers (local project files)
+  # Example: #include "my_header.hpp"
+  - Regex: '".*"'
+    Priority: 1
+    
+  # Priority 2: Project API headers  
+  # Example: #include <saam/public_api.hpp>
+  - Regex: '^<saam/'
+    Priority: 2
+    
+  # Priority 3: Third-party library headers (with subdirectories)
+  # Example: #include <boost/algorithm/string.hpp>
+  - Regex: '^<[[:alnum:]_]+/'
+    Priority: 3
+    
+  # Priority 4: Standard library headers
+  # Example: #include <vector>, #include <string>
+  - Regex: '^<[[:alnum:]_]+>'
+    Priority: 4
+
+# ===== MISCELLANEOUS FORMATTING =====
+# Ensure files end with a newline character
+InsertNewlineAtEOF: true
+
+# Indent C++20 requires clauses
+# Example: template<typename T>
+#              requires std::integral<T>  <- indented
+#          void func(T value);
+IndentRequiresClause: true
+
+# Place C++20 requires clauses on their own line
+# Example: template<typename T>
+#          requires std::integral<T>     <- on separate line
+#          void func(T value);
+RequiresClausePosition: OwnLine

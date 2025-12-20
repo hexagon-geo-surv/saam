@@ -229,46 +229,37 @@ This policy incurs some performance loss when `saam::ref` is copied/moved due to
 
 When a `saam::ref` outlives its associated `saam::var`, a panic is triggered, and the process is aborted. This abortion can be analyzed to find the invalid reference.
 
-Example borrow violation report:
-```
-Panic: Borrow checked variable of type <class demo::component_b> destroyed with 1 active reference(s).
+Define the following function, in order to be able to create a report about the panic.
+
+``` c++
+namespace saam
+{
+void dangling_reference_panic(const std::type_info &var_type, void *var_instance, std::size_t num_dangling_references) noexcept
+{
+    // Dump the panic state
+}
+}
 ```
 
 ### Tracked
 When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to.
-The fault report includes the call stacks where the `saam::var` was destroyed and the creation stacks of all dangling `saam::ref` instances. This mode requires C++23 with stacktrace support.
+The fault report includes the call stack where the `saam::var` was destroyed and the creation stack(s) of the dangling `saam::ref` instance(s). This mode requires C++23 with stacktrace support.
 
-Example borrow violation report:
-```
-Panic: Borrow checked variable of type <class demo::component_b> destroyed at
-0> D:\devel\saam\include\saam\saam\tracked\var.hpp(94): saam_demo!saam::var<demo::component_b>::~var<demo::component_b>+0x11D
-1> saam_demo!demo::system::~system+0x1D
-2> D:\devel\saam\apps\demo\src\main.cpp(22): saam_demo!main+0xA0
-3> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl(79): saam_demo!invoke_main+0x39
-4> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl(288): saam_demo!__scrt_common_main_seh+0x132
-5> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl(331): saam_demo!__scrt_common_main+0xE
-6> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_main.cpp(17): saam_demo!mainCRTStartup+0xE
-7> KERNEL32!BaseThreadInitThunk+0x1D
-8> ntdll!RtlUserThreadStart+0x28
+Define the following function, in order to be able to create a report about the panic.
+This function is called for each dangling `saam::ref` on the `saam::var` that triggered the panic.
 
-still has active references. Active reference(s) created at:
-0> D:\devel\saam\include\saam\saam\tracked\detail\reference_link_container.hpp(196): saam_demo!saam::ref_link::capture_stacktrace+0x47
-1> D:\devel\saam\include\saam\saam\tracked\detail\reference_link_container.hpp(38): saam_demo!saam::ref_link::ref_link+0x49
-2> D:\devel\saam\include\saam\saam\tracked\ref.hpp(40): saam_demo!saam::ref<demo::component_b>::ref<demo::component_b>+0x1E
-3> D:\devel\saam\apps\demo\src\component_b.hpp(29): saam_demo!`demo::component_b::start'::`2'::<lambda_1>::<lambda_1>+0x2B
-4> C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.43.34808\include\functional(854): saam_demo!std::_Func_impl_no_alloc<`demo::component_b::start'::`2'::<lambda_1>,void>::_Func_impl_no_alloc<`demo::component_b::start'::`2'::<lambda_1>,void><`demo::component_b::start'::`2'::<lambda_1>,0>+0x45
-5> C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.43.34808\include\functional(842): saam_demo!std::_Global_new<std::_Func_impl_no_alloc<`demo::component_b::start'::`2'::<lambda_1>,void>,`demo::component_b::start'::`2'::<lambda_1> >+0x52
-6> C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.43.34808\include\functional(969): saam_demo!std::_Func_class<void>::_Reset<`demo::component_b::start'::`2'::<lambda_1> >+0x2C
-7> C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.43.34808\include\functional(1100): saam_demo!std::function<void __cdecl(void)>::function<void __cdecl(void)><`demo::component_b::start'::`2'::<lambda_1>,0>+0x29
-8> D:\devel\saam\apps\demo\src\component_b.hpp(29): saam_demo!demo::component_b::start+0x9C
-9> D:\devel\saam\apps\demo\src\system.hpp(27): saam_demo!demo::system::run+0x5B
-10> D:\devel\saam\apps\demo\src\main.cpp(20): saam_demo!main+0x8A
-11> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl(79): saam_demo!invoke_main+0x39
-12> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl(288): saam_demo!__scrt_common_main_seh+0x132
-13> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_common.inl(331): saam_demo!__scrt_common_main+0xE
-14> D:\a\_work\1\s\src\vctools\crt\vcstartup\src\startup\exe_main.cpp(17): saam_demo!mainCRTStartup+0xE
-15> KERNEL32!BaseThreadInitThunk+0x1D
-16> ntdll!RtlUserThreadStart+0x28
+``` c++
+namespace saam
+{
+void dangling_reference_panic(const std::type_info &var_type,
+                              void *var_instance,
+                              const std::stacktrace &var_destruction_stack,
+                              std::size_t dangling_ref_index,
+                              const std::stacktrace &dangling_ref_creation_stack) noexcept
+{
+    // Dump the panic state
+}
+}
 ```
 
 This mode stores the creation stacktrace with each reference. This may be a bit too intensive to do for every ref.
@@ -280,6 +271,8 @@ so we just have to narrow it down to the instance to fix the dangling.
 No borrow checking takes place, and the `saam::ref` class behaves like a raw reference.
 The `saam::ref` is optimized away by the compiler and the code runs the same as with raw references.
 This mode is recommended when maximum performance is needed, but the `saam` library infrastructure is still used, allowing changing to a safer policy without touching the code.
+
+As the unchecked mode does not do reference checking, no panic callback is needed.
 
 ### Recommended Usage
 

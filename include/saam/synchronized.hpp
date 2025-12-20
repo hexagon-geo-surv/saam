@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <saam/sentinel.hpp>
 #include <saam/safe_ref.hpp>
+#include <saam/sentinel.hpp>
 
 #include <mutex>
 #include <shared_mutex>
@@ -25,31 +25,31 @@ class synchronized
     synchronized() = default;
 
     template <typename... Args>
-    explicit synchronized(std::in_place_t, Args &&...args)
-        : protected_instance_(std::forward<Args>(args)...)
+    explicit synchronized(std::in_place_t, Args &&...args) :
+        protected_instance_(std::forward<Args>(args)...)
     {
     }
 
-    explicit synchronized(const T &instance)
-        : protected_instance_(instance)
+    explicit synchronized(const T &instance) :
+        protected_instance_(instance)
     {
     }
 
-    explicit synchronized(T &&instance)
-        : protected_instance_(std::move(instance))
+    explicit synchronized(T &&instance) :
+        protected_instance_(std::move(instance))
     {
     }
 
     // No conversion copy constructor, because of the slicing of T - only the base class would be copied
-    synchronized(const synchronized &other)
-        : protected_instance_(*other.lock())
+    synchronized(const synchronized &other) :
+        protected_instance_(*other.lock())
     {
         // Just take the other instance, synchronizedes of "this" and "other" are independent
     }
 
     // No conversion move constructor, because of the slicing of T - only the base class would be copied
-    synchronized(synchronized &&other) noexcept
-        : protected_instance_(std::move(*other.lock_mut()))
+    synchronized(synchronized &&other) noexcept :
+        protected_instance_(std::move(*other.lock_mut()))
     {
         // Just take the other instance, synchronizedes of "this" and "other" are independent
     }
@@ -126,18 +126,18 @@ class synchronized
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-sentinel<T>::sentinel(const synchronized<TOther> &other) noexcept
-    : sentinel(const_cast<synchronized<TOther> &>(other).protected_instance_,
-               std::unique_lock(const_cast<synchronized<TOther> &>(other).protector_mutex_))
+sentinel<T>::sentinel(const synchronized<TOther> &other) noexcept :
+    sentinel(const_cast<synchronized<TOther> &>(other).protected_instance_,
+             std::unique_lock(const_cast<synchronized<TOther> &>(other).protector_mutex_))
 {
 }
 
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, const T *> && !std::is_const_v<TOther>)
-sentinel<const T>::sentinel(const synchronized<TOther> &other) noexcept
-    : sentinel(const_cast<synchronized<TOther> &>(other).protected_instance_,
-               std::shared_lock(const_cast<synchronized<TOther> &>(other).protector_mutex_))
+sentinel<const T>::sentinel(const synchronized<TOther> &other) noexcept :
+    sentinel(const_cast<synchronized<TOther> &>(other).protected_instance_,
+             std::shared_lock(const_cast<synchronized<TOther> &>(other).protector_mutex_))
 {
 }
 
