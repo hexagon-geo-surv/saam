@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <saam/detail/borrow_manager_traits.hpp>    
+#include <saam/detail/borrow_manager_traits.hpp>
 #include <concepts>
 
 namespace saam
