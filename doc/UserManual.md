@@ -281,17 +281,40 @@ The recommended use is to use `counted` mode (the default).
 2. In a trivial situation, the developer can identify the dangling reference by code inspection.
 3. In a more complex situation, the developer recompiles the code in `tracked` mode and reproduces the error.
 
-## Smart Self Reference
-An object held by a smart pointer can give its smart "this" pointer using the `std::enable_shared_from_this` CRTP template.
+### Post-constructor and pre-destructor
 
+A `saam::var` decorated instance may have two public functions `void post_constructor(saam::current_borrow_manager_t &)` 
+and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely.
+
+In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered
+to be usable, because the object is not yet created.
+Therefore if a post-constructor exists, it is called and there the self reference is already available.
+It is ideal place to start create callbacks or any other objects, which
+needs to know the smart reference of the object.
+
+The pre-destructor is a called before `saam::var` destroys the wrapped instance. This is a great place
+to put code to revoke outstanding smart references, like cancelling callbacks, etc.
+
+## Smart Self Reference
+
+Sometimes object need to know their smart references.
 The `saam` smart variable also offers this feature, which can be very handy for callbacks.
 
+When a class has post-constructor, then the class receives its borrow manager there.
+If necessary, then using the "this" pointer and borrow manager, smart references can be constructed.
+
 ```cpp
-class my_class : public saam::enable_ref_from_this<my_class> 
+class my_class
 {
+    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    {
+        borrow_manager_ = &borrow_manager;
+    }
+
     void subscribe_for_shutdown() 
     {
-        subscription_ = shutdown_controller_->on_shutdown([self = borrow_from_this()]() {
+        // create a smart reference based on the "this" pointer and the borrow manager
+        subscription_ = shutdown_controller_->on_shutdown([self = saam::ref<best_practice>(*this, *borrow_manager_)]() {
             self->print_status();
         });
     }
@@ -303,6 +326,7 @@ class my_class : public saam::enable_ref_from_this<my_class>
         subscription_.release();
     }
 
+    saam::current_borrow_manager_t *borrow_manager_{nullptr};
     signal_subscription subscription_;
     saam::ref<shutdown_controller> shutdown_controller_;
 };
@@ -326,19 +350,29 @@ This problem is similar to the `std::shared_ptr` circular reference problem. The
 because their constructor will be not called. Here, a panic is triggered when a reference in another object is still alive when the smart variable is destroyed.
 Tipical scenario for this is a callback holding a reference.
 
-### Post constructor and pre destructor
+An alternative solution, is to store the smart self reference in the class, but then make sure that it is freed before the
+class is destructed.
 
-A `saam::var` decorated instance may have two public functions `void post_constructor()` and a `void pre_destructor()`.
-If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely.
+```cpp
+class my_class
+{
+    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    {
+        // From this point on, smart references can be created.
+        smart_self_ = saam::ref<my_class>(*this, borrow_manager);
+    }
 
-In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered
-to be usable, because the object is not yet created.
-Therefore if a post constructor exists, it is called and there the self reference is already available.
-It is ideal place to start create callbacks or any other objects, which
-needs to know the smart reference of the object.
+    void pre_destructor()
+    {
+        // Release the self reference before destruction, so that the instance does not contain
+        // a reference to self during destruction.
+        smart_self_.reset();
+    }
 
-The pre destructor is a called before `saam::var` destroys the wrapped instance. This is a great place
-to put code to revoke outstanding smart references, like cancelling callbacks, etc.
+    // It is too early to create the smart_self in the constructor, hence the std::optional
+    std::optional<saam::ref<my_class_with_post_constructor_and_pre_destructor>> smart_self_;
+};
+```
 
 ## Working with legacy API
 

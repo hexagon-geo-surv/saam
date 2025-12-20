@@ -12,10 +12,10 @@
 namespace saam
 {
 
-template <class T, borrow_manager TBorrowManager>
+template <typename T, borrow_manager TBorrowManager>
 class basic_enable_ref_from_this;
 
-template <class T, borrow_manager TBorrowManager>
+template <typename T, borrow_manager TBorrowManager>
 class basic_var
 {
   public:
@@ -49,8 +49,6 @@ class basic_var
     [[nodiscard]] operator T &() const = delete;
 
   private:
-    void call_pre_destructor();
-
     void configure_enable_ref_from_this();
 
     void call_post_constructor();

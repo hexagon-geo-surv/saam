@@ -6,8 +6,6 @@
 
 #include <saam/detail/borrow_manager_traits.hpp>
 
-#include <typeinfo>
-
 namespace saam
 {
 
@@ -79,10 +77,6 @@ class unchecked_borrow_manager
 
   private:
     unchecked_borrow_manager() = default;
-
-    void verify_dangling_references(const std::type_info &var_type, void *var_instance) const noexcept
-    {
-    }
 
     template <typename TOther, borrow_manager TOtherBorrowManager>
     friend class basic_var;

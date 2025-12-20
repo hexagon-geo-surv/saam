@@ -13,12 +13,17 @@
 namespace saam::test
 {
 
-class my_class : public saam::enable_ref_from_this<my_class>
+class my_class
 {
   public:
+    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    {
+        borrow_manager_ = &borrow_manager;
+    }
+
     std::function<int(int)> generate_callback() const
     {
-        return [self = borrow_from_this()](int data) { return self->increase(data); };
+        return [self = saam::ref<const my_class>(*this, *borrow_manager_)](int data) { return self->increase(data); };
     }
 
   private:
@@ -27,6 +32,7 @@ class my_class : public saam::enable_ref_from_this<my_class>
         return data + increment_;
     }
 
+    saam::current_borrow_manager_t *borrow_manager_{nullptr};
     int increment_ = 1;
 };
 
@@ -53,12 +59,12 @@ TEST(tracked_enable_ref_from_this_test, dangling_ref)
     EXPECT_DEATH(dangling_ref(), ".*");
 }
 
-class my_class_only_post_constructor : public saam::enable_ref_from_this<my_class_only_post_constructor>
+class my_class_only_post_constructor
 {
   public:
-    void post_constructor()
+    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
-        self_ = borrow_from_this();
+        self_ = saam::ref<my_class_only_post_constructor>(*this, borrow_manager);
     }
 
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
@@ -66,18 +72,18 @@ class my_class_only_post_constructor : public saam::enable_ref_from_this<my_clas
 
 TEST(tracked_enable_ref_from_this_test, self_reference_not_released_before_destruction)
 {
+    // The smart self recfernce is not released before destruction. This dangling reference create a panic at destruction time.
     auto owning_self_reference_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
 
     EXPECT_DEATH(owning_self_reference_at_destruction(), ".*");
 }
 
-class my_class_with_post_constructor_and_pre_destructor :
-    public saam::enable_ref_from_this<my_class_with_post_constructor_and_pre_destructor>
+class my_class_with_post_constructor_and_pre_destructor
 {
   public:
-    void post_constructor()
+    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
-        self_ = borrow_from_this();
+        self_ = saam::ref<my_class_with_post_constructor_and_pre_destructor>(*this, borrow_manager);
     }
 
     void pre_destructor()
