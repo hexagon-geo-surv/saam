@@ -72,7 +72,7 @@ class my_class_only_post_constructor
 
 TEST(tracked_enable_ref_from_this_test, self_reference_not_released_before_destruction)
 {
-    // The smart self recfernce is not released before destruction. This dangling reference create a panic at destruction time.
+    // The smart self reference is not released before destruction. This dangling reference create a panic at destruction time.
     auto owning_self_reference_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
 
     EXPECT_DEATH(owning_self_reference_at_destruction(), ".*");
