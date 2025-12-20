@@ -23,6 +23,9 @@ class basic_ref : private TBorrowManager::ref_base
     // This case, there is no borrow checking
     explicit basic_ref(T &instance);
 
+    // Managed reference constructor
+    basic_ref(T &instance, TBorrowManager &borrow_manager);
+
     // Conversion copy constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, T *>
@@ -83,6 +86,9 @@ class basic_ref : private TBorrowManager::ref_base
     // Dereference operator
     [[nodiscard]] T &operator*() const noexcept;
 
+    // rvalue reference access
+    [[nodiscard]] T &&rval_ref() const noexcept;
+
     // Cast to T reference
     [[nodiscard]] explicit operator T &() const noexcept;
 
@@ -107,7 +113,8 @@ class basic_ref : private TBorrowManager::ref_base
     template <typename TOther, borrow_manager TOtherBorrowManager>
     friend class basic_ref;
 
-    basic_ref(T &instance, TBorrowManager &borrow_manager);
+    template <typename TOther, borrow_manager TOtherBorrowManager>
+    friend class basic_enable_ref_from_this_2;
 
     T *instance_ = nullptr;
 };

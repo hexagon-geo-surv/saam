@@ -16,7 +16,6 @@ namespace saam
 template <class T, borrow_manager TBorrowManager>
 basic_var<T, TBorrowManager>::basic_var()
 {
-    configure_enable_ref_from_this();
     call_post_constructor();
 }
 
@@ -25,7 +24,6 @@ template <typename... Args>
 basic_var<T, TBorrowManager>::basic_var(std::in_place_t, Args &&...args)
     : instance_(std::forward<Args>(args)...)
 {
-    configure_enable_ref_from_this();
     call_post_constructor();
 }
 
@@ -33,7 +31,6 @@ template <class T, borrow_manager TBorrowManager>
 basic_var<T, TBorrowManager>::basic_var(const T &instance)
     : instance_(instance)
 {
-    configure_enable_ref_from_this();
     call_post_constructor();
 }
 
@@ -41,7 +38,6 @@ template <class T, borrow_manager TBorrowManager>
 basic_var<T, TBorrowManager>::basic_var(T &&instance)
     : instance_(std::move(instance))
 {
-    configure_enable_ref_from_this();
     call_post_constructor();
 }
 
@@ -116,20 +112,11 @@ void basic_var<T, TBorrowManager>::call_pre_destructor()
 }
 
 template <class T, borrow_manager TBorrowManager>
-void basic_var<T, TBorrowManager>::configure_enable_ref_from_this()
-{
-    if constexpr (std::is_base_of_v<basic_enable_ref_from_this<T, TBorrowManager>, T>)
-    {
-        instance_.smart_variable(this);
-    }
-}
-
-template <class T, borrow_manager TBorrowManager>
 void basic_var<T, TBorrowManager>::call_post_constructor()
 {
-    if constexpr (has_post_constructor<T>)
+    if constexpr (has_post_constructor<T, TBorrowManager>)
     {
-        instance_.post_constructor();
+        instance_.post_constructor(borrow_manager_);
     }
 }
 

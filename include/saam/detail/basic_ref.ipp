@@ -12,41 +12,41 @@
 namespace saam
 {
 template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::basic_ref(T &instance)
-    : instance_(&instance)
+basic_ref<T, TBorrowManager>::basic_ref(T &instance) :
+    instance_(&instance)
 {
 }
 
 template <typename T, borrow_manager TBorrowManager>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
-basic_ref<T, TBorrowManager>::basic_ref(const basic_ref<TOther, TBorrowManager> &other)
-    : TBorrowManager::ref_base(other)
-    , instance_(other.instance_)
+basic_ref<T, TBorrowManager>::basic_ref(const basic_ref<TOther, TBorrowManager> &other) :
+    TBorrowManager::ref_base(other),
+    instance_(other.instance_)
 {
 }
 
 template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::basic_ref(const basic_ref &other)
-    : TBorrowManager::ref_base(other)
-    , instance_(other.instance_)
+basic_ref<T, TBorrowManager>::basic_ref(const basic_ref &other) :
+    TBorrowManager::ref_base(other),
+    instance_(other.instance_)
 {
 }
 
 template <typename T, borrow_manager TBorrowManager>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
-basic_ref<T, TBorrowManager>::basic_ref(basic_ref<TOther, TBorrowManager> &&other) noexcept
-    : TBorrowManager::ref_base(std::move(other))
-    , instance_(other.instance_)
+basic_ref<T, TBorrowManager>::basic_ref(basic_ref<TOther, TBorrowManager> &&other) noexcept :
+    TBorrowManager::ref_base(std::move(other)),
+    instance_(other.instance_)
 {
     other.instance_ = nullptr;
 }
 
 template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::basic_ref(basic_ref &&other) noexcept
-    : TBorrowManager::ref_base(std::move(other))
-    , instance_(other.instance_)
+basic_ref<T, TBorrowManager>::basic_ref(basic_ref &&other) noexcept :
+    TBorrowManager::ref_base(std::move(other)),
+    instance_(other.instance_)
 {
     other.instance_ = nullptr;
 }
@@ -54,9 +54,9 @@ basic_ref<T, TBorrowManager>::basic_ref(basic_ref &&other) noexcept
 template <typename T, borrow_manager TBorrowManager>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
-basic_ref<T, TBorrowManager>::basic_ref(const basic_var<TOther, TBorrowManager> &other) noexcept
-    : basic_ref(const_cast<basic_var<TOther, TBorrowManager> &>(other).instance_,
-                const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_)
+basic_ref<T, TBorrowManager>::basic_ref(const basic_var<TOther, TBorrowManager> &other) noexcept :
+    basic_ref(const_cast<basic_var<TOther, TBorrowManager> &>(other).instance_,
+              const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_)
 {
 }
 
@@ -168,6 +168,13 @@ basic_ref<T, TBorrowManager>::operator T *() const noexcept
 }
 
 template <typename T, borrow_manager TBorrowManager>
+[[nodiscard]] T &&basic_ref<T, TBorrowManager>::rval_ref() const noexcept
+{
+    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    return std::move(*instance_);
+}
+
+template <typename T, borrow_manager TBorrowManager>
 template <typename TOther>
     requires std::is_base_of_v<T, TOther>
 basic_ref<TOther, TBorrowManager> basic_ref<T, TBorrowManager>::static_down_cast() const
@@ -186,9 +193,9 @@ basic_ref<TOther, TBorrowManager> basic_ref<T, TBorrowManager>::dynamic_down_cas
 }
 
 template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::basic_ref(T &instance, TBorrowManager &borrow_manager)
-    : TBorrowManager::ref_base(borrow_manager)
-    , instance_(&instance)
+basic_ref<T, TBorrowManager>::basic_ref(T &instance, TBorrowManager &borrow_manager) :
+    TBorrowManager::ref_base(borrow_manager),
+    instance_(&instance)
 {
 }
 
