@@ -17,7 +17,7 @@ TEST(unchecked_borrow_test, sequential_borrow)
 {
     auto process_text = [](saam::ref<std::string> text) { ++(text->at(0)); };
 
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     {
         process_text(text);
@@ -32,7 +32,7 @@ TEST(unchecked_borrow_test, sequential_borrow)
 
 TEST(unchecked_borrow_test, parallel_borrow)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     saam::ref<std::string> text_mut1 = text;
     text_mut1->at(0) = 'Y';
@@ -47,7 +47,7 @@ TEST(unchecked_borrow_test, parallel_borrow)
 
 TEST(unchecked_borrow_test, nullable_ref)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     std::optional<saam::ref<std::string>> maybe_text_ref = text;
 
@@ -59,7 +59,7 @@ TEST(unchecked_borrow_test, var_implicit_borrow)
 {
     auto process_text = [](saam::ref<std::string> text) { text->at(0) = 'Y'; };
 
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     saam::ref<std::string> text_ref = text;
     saam::ref<const std::string> text_const_ref = text;
@@ -68,7 +68,7 @@ TEST(unchecked_borrow_test, var_implicit_borrow)
 
 TEST(unchecked_borrow_test, borrow_move_copy_construction)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     saam::ref<const std::string> text_ref(text);
 
@@ -81,8 +81,8 @@ TEST(unchecked_borrow_test, borrow_move_copy_construction)
 
 TEST(unchecked_borrow_test, borrow_move_copy_different_instance_assignment)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
-    saam::var<std::string> text2(std::in_place, "Welcom world");
+    saam::var<std::string> text("Hello world");
+    saam::var<std::string> text2("Welcom world");
 
     saam::ref<const std::string> textref1(text);
     saam::ref<const std::string> textref2(text2);
@@ -95,7 +95,7 @@ TEST(unchecked_borrow_test, borrow_move_copy_different_instance_assignment)
 
 TEST(unchecked_borrow_test, borrow_move_copy_same_instance_assignment)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     saam::ref<const std::string> textref1(text);
     saam::ref<const std::string> textref2 = textref1;

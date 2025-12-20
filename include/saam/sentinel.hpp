@@ -109,6 +109,11 @@ class sentinel
         return protected_instance_.operator*();
     }
 
+    [[nodiscard]] T &&rval_ref() const
+    {
+        return protected_instance_.rval_ref();
+    }
+
   private:
     template <typename TOther>
         requires(!std::is_const_v<TOther>)

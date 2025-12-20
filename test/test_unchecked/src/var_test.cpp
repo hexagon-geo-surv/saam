@@ -15,13 +15,13 @@ namespace saam::test
 
 TEST(unchecked_var_test, var_instance_move_creation)
 {
-    saam::var<std::string> text(std::in_place, std::string("Hello world"));
+    saam::var<std::string> text(std::string("Hello world"));
     ASSERT_EQ(text.borrow()->length(), 11);
 }
 
 TEST(unchecked_var_test, var_emplace_creation)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
     ASSERT_EQ(text.borrow()->length(), 11);
 }
 
@@ -49,7 +49,7 @@ TEST(unchecked_var_test, var_content_assignment)
 
 TEST(unchecked_var_test, var_access_with_mutable_content)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     ASSERT_EQ(text.borrow()->at(0), 'H');
 
@@ -59,7 +59,7 @@ TEST(unchecked_var_test, var_access_with_mutable_content)
 
 TEST(unchecked_var_test, var_access_with_immutable_content)
 {
-    saam::var<const std::string> text(std::in_place, "Hello world");
+    saam::var<const std::string> text("Hello world");
 
     ASSERT_EQ(text.borrow()->at(0), 'H');
 
@@ -68,7 +68,7 @@ TEST(unchecked_var_test, var_access_with_immutable_content)
 
 TEST(unchecked_var_test, var_modification)
 {
-    saam::var<std::string> text(std::in_place, "Hello world");
+    saam::var<std::string> text("Hello world");
 
     *text.borrow() = "Hi everybody";
 

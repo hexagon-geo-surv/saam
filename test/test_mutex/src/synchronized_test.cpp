@@ -19,13 +19,13 @@ class synchronized_test : public ::testing::Test
 
 TEST_F(synchronized_test, instance_move_creation)
 {
-    saam::synchronized<std::string> text(std::in_place, std::string("Hello world"));
+    saam::synchronized<std::string> text(std::string("Hello world"));
     ASSERT_EQ(text.lock()->length(), 11);
 }
 
 TEST_F(synchronized_test, emplace_creation)
 {
-    saam::synchronized<std::string> text(std::in_place, "Hello world");
+    saam::synchronized<std::string> text("Hello world");
     ASSERT_EQ(text.lock()->length(), 11);
 }
 
@@ -53,7 +53,7 @@ TEST_F(synchronized_test, content_assignment)
 
 TEST_F(synchronized_test, access_with_mutable_content)
 {
-    saam::synchronized<std::string> text(std::in_place, "Hello world");
+    saam::synchronized<std::string> text("Hello world");
 
     ASSERT_EQ(text.lock()->at(0), 'H');
 

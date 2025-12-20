@@ -18,7 +18,7 @@ class system
 {
   public:
     system() :
-        component_b_(std::in_place, make_any_ptr(component_a_))
+        component_b_(make_any_ptr(component_a_))
     {
     }
 

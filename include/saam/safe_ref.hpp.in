@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <saam/detail/basic_enable_ref_from_this.hpp>
 #include <saam/detail/basic_ref.ipp>
 #include <saam/detail/basic_var.ipp>
 
@@ -13,7 +12,6 @@
 #ifndef SAAM_BORROW_CHECKING_MODE
 #define SAAM_BORROW_CHECKING_MODE @SAAM_BORROW_CHECKING_MODE_CMAKE@
 #endif
-
 
 #if SAAM_BORROW_CHECKING_MODE == 0
 
@@ -55,8 +53,5 @@ using var = basic_var<T, current_borrow_manager_t>;
 
 template <typename T>
 using ref = basic_ref<T, current_borrow_manager_t>;
-
-template <typename T>
-using enable_ref_from_this = basic_enable_ref_from_this<T, current_borrow_manager_t>;
 
 };  // namespace saam

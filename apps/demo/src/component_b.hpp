@@ -16,7 +16,7 @@
 namespace demo
 {
 
-class component_b : public saam::enable_ref_from_this<component_b>
+class component_b
 {
   public:
     explicit component_b(saam::any_ptr<component_a> comp_a) :
@@ -27,12 +27,13 @@ class component_b : public saam::enable_ref_from_this<component_b>
     component_b(component_b &&other) noexcept = default;
     component_b &operator=(component_b &&other) noexcept = default;
 
-    void post_constructor()
+    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
         if (comp_a_)
         {
             // at this point the safe self reference is available
-            comp_a_->register_callback([self = borrow_from_this()]() { std::cout << "component_b callback called\n"; });
+            comp_a_->register_callback(
+                [self = saam::ref<component_b>(*this, borrow_manager)]() { std::cout << "component_b callback called\n"; });
         }
     }
 

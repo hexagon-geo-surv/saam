@@ -4,14 +4,15 @@
 
 #pragma once
 
+#include <saam/detail/borrow_manager_traits.hpp>
 #include <concepts>
 
 namespace saam
 {
 
-template <typename T>
-concept has_post_constructor = requires(T t) {
-    { t.post_constructor() } -> std::same_as<void>;
+template <typename T, typename TBorrowManager>
+concept has_post_constructor = requires(T t, TBorrowManager borrow_mgr) {
+    { t.post_constructor(borrow_mgr) } -> std::same_as<void>;
 };
 
 template <typename T>

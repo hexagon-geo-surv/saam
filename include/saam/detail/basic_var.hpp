@@ -12,17 +12,17 @@
 namespace saam
 {
 
-template <class T, borrow_manager TBorrowManager>
+template <typename T, borrow_manager TBorrowManager>
 class basic_enable_ref_from_this;
 
-template <class T, borrow_manager TBorrowManager>
+template <typename T, borrow_manager TBorrowManager>
 class basic_var
 {
   public:
     basic_var();
 
     template <typename... Args>
-    explicit basic_var(std::in_place_t, Args &&...args);
+    explicit basic_var(Args &&...args);
 
     explicit basic_var(const T &instance);
 
@@ -49,10 +49,6 @@ class basic_var
     [[nodiscard]] operator T &() const = delete;
 
   private:
-    void call_pre_destructor();
-
-    void configure_enable_ref_from_this();
-
     void call_post_constructor();
 
     template <typename TOther, borrow_manager TOtherBorrowManager>
@@ -61,7 +57,6 @@ class basic_var
     template <typename TOther, borrow_manager TOtherBorrowManager>
     friend class basic_ref;
 
-    // Keeping the instance at the first position ensures that the basic_var and its instance_ member have the same address.
     T instance_;
     mutable TBorrowManager borrow_manager_;
 };
