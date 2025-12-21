@@ -262,7 +262,7 @@ void dangling_reference_panic(const std::type_info &var_type, void *var_instance
 }
 ```
 
-This managed mode reliably detects the danling reference situation, but does not provide info about the dangling reference instances.
+This managed mode reliably detects the dangling reference situation, but does not provide info about the dangling reference instances.
 
 #### Tracked
 When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to.
