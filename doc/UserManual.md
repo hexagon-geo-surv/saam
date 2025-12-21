@@ -220,10 +220,31 @@ saam::ref<base> base_ref = ......;
 saam::ref<derived> derived_ref = base_ref.dynamic_down_cast<derived>();
 ```
 
-## Borrow Checking Modes
-The library provides three modes of operation.
+## Reference management modes
 
-### Counted
+- raw reference
+  `std::string&`
+- smart reference
+  `saam::ref<std::string>`
+  - managed mode : the smart reference was created from a smart variable
+   ```c++
+   saam::var<std::string> text{"Hello World"};
+   // The smart variable passes the borrow manager to the smart ref
+   saam::ref<std::string> ref(text);
+   ```
+  - unmanaged mode : the smart reference was created from a raw variable
+   ```c++
+   std::string text{"Hello World"};
+   // The "raw" variable passes no borrow manager to the smart ref
+   saam::ref<std::string> ref(text);
+   ```
+
+### Managed
+In managed mode, a `saam::ref` is created from an associated `saam::var`. The smart variable and reference have a borrow manager that keeps track of the references. With that, it is possible to check if there were dangling references when the `saam::var` was destroyed.
+
+Only one of the managed modes can be active at a time. This is set up when the library is installed.
+
+#### Counted
 The `saam::var` uses atomic reference counting (similar to `std::shared_ptr`) to track outstanding `saam::ref` instances.
 This policy incurs some performance loss when `saam::ref` is copied/moved due to counter management. Accessing the variable through `saam::ref` has no additional cost, similar to using a raw reference.
 
@@ -241,7 +262,9 @@ void dangling_reference_panic(const std::type_info &var_type, void *var_instance
 }
 ```
 
-### Tracked
+This managed mode reliably detects the dangling reference situation, but does not provide info about the dangling reference instances.
+
+#### Tracked
 When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to.
 The fault report includes the call stack where the `saam::var` was destroyed and the creation stack(s) of the dangling `saam::ref` instance(s). This mode requires C++23 with stacktrace support.
 
@@ -267,23 +290,30 @@ Therefore by default the stack tracing is disabled, and can be enabled for a spe
 Enabling it for a specific type is usually enough, because in `counted` mode the type that had dangling references is known,
 so we just have to narrow it down to the instance to fix the dangling.
 
-### Unchecked
-No borrow checking takes place, and the `saam::ref` class behaves like a raw reference.
-The `saam::ref` is optimized away by the compiler and the code runs the same as with raw references.
-This mode is recommended when maximum performance is needed, but the `saam` library infrastructure is still used, allowing changing to a safer policy without touching the code.
+This managed mode gives the most detailed information about the dangling reference situation.
 
-As the unchecked mode does not do reference checking, no panic callback is needed.
+#### Unchecked
+No borrow checking takes place, and the `saam::ref` class behaves like an unmanaged smart reference (see below).
+In this mode, managed smart references (extracted from a `saam::var`) become an unmanaged smart reference.
+
+Use this mode for maximum performance to save the cost of the borrow checking when you are confident about the code.
+
+### Unmanaged
+When a smart reference refers to a raw C++ variable instead of a `saam::var`, then there are no borrow checks performed.
+
+This operation is used mainly for compatibility reasons - see the legacy API section below.
 
 ### Recommended Usage
 
-The recommended use is to use `counted` mode (the default).
-1. When a borrowing violation is detected, the application panics and crashes.
-2. In a trivial situation, the developer can identify the dangling reference by code inspection.
-3. In a more complex situation, the developer recompiles the code in `tracked` mode and reproduces the error.
+1. It is recommended to use managed `counted` mode by default.
+2. When a borrowing violation is detected, the application panics and crashes.
+3. In a trivial situation, the developer can identify the dangling reference by code inspection.
+4. In a more complex situation, the developer recompiles the code in `tracked` mode and reproduces the error.
+5. When the application runs stable, then one can consider switching to the unchecked mode for maximum performance.
 
 ### Post-constructor and pre-destructor
 
-A `saam::var` decorated instance may have two public functions `void post_constructor(saam::current_borrow_manager_t &)` 
+A `saam::var` decorated instance may have two public functions `void post_constructor(saam::current_borrow_manager_t *)` 
 and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely.
 
 In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered
@@ -295,7 +325,7 @@ needs to know the smart reference of the object.
 The pre-destructor is a called before `saam::var` destroys the wrapped instance. This is a great place
 to put code to revoke outstanding smart references, like cancelling callbacks, etc.
 
-## Smart Self Reference
+## Smart `Self` reference
 
 Sometimes object need to know their smart references.
 The `saam` smart variable also offers this feature, which can be very handy for callbacks.
@@ -306,15 +336,16 @@ If necessary, then using the "this" pointer and borrow manager, smart references
 ```cpp
 class my_class
 {
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
-        borrow_manager_ = &borrow_manager;
+        borrow_manager_ = borrow_manager;
     }
 
     void subscribe_for_shutdown() 
     {
         // create a smart reference based on the "this" pointer and the borrow manager
-        subscription_ = shutdown_controller_->on_shutdown([self = saam::ref<best_practice>(*this, *borrow_manager_)]() {
+        // the reference can be managed or unmanaged - depending on the borrow_manager_ pointer
+        subscription_ = shutdown_controller_->on_shutdown([self = saam::ref<best_practice>(*this, borrow_manager_)]() {
             self->print_status();
         });
     }
@@ -350,6 +381,10 @@ This problem is similar to the `std::shared_ptr` circular reference problem. The
 because their constructor will be not called. Here, a panic is triggered when a reference in another object is still alive when the smart variable is destroyed.
 Tipical scenario for this is a callback holding a reference.
 
+> [!NOTE]
+> The default `borrow_manager_` value is nullptr. A reference created with a null borrow manager, makes an unmanaged reference.
+> In the `subscribe_for_shutdown` function, the `self` reference parameter will be either unmanaged or managed depending on the fact if the `post_constructor` is called.
+
 An alternative solution, is to store the smart self reference in the class, but then make sure that it is freed before the
 class is destructed.
 
@@ -359,7 +394,7 @@ class my_class
     void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
         // From this point on, smart references can be created.
-        smart_self_ = saam::ref<my_class>(*this, borrow_manager);
+        smart_self_ = saam::ref<my_class>(*this, &borrow_manager);
     }
 
     void pre_destructor()
@@ -376,37 +411,35 @@ class my_class
 
 ## Working with legacy API
 
-Transitioning between smart references and raw references are always explicit. This explicitness
-makes the user aware of losing security.
+Transitioning between smart references and raw references are always explicit. This explicitness makes the user aware of losing security.
 
 ```cpp
+// The API expects a raw reference
 std::size_t get_text_length(const std::string& text) 
 {
     return text.length();
 }
 
 saam::var<std::string> text{"hello"};
-
-// Leaving the reference checks must be explicit
+// Create a raw reference from the smart variable
 auto generated_text = get_text_length(static_cast<const std::string&>(text.borrow()));
-
 // A shorthand way, but it is still explicit (see the asterix).
 auto generated_text = get_text_length(*text.borrow());
 ```
 
-Transition from raw reference to the smart reference is also explicit. Note that in such
-a case - even though smart references are used - there is no way to check reference validity
-inside the `get_text_length` function.
+Transition from raw reference to the smart reference is also explicit. Note that in such a case - even though smart references are used - there is no way to check reference validity inside the `get_text_length` function.
 
 ```cpp
+// The API expects a smart reference
 std::size_t get_text_length(saam::ref<std::string> text) 
 {
     return text->length();
 }
 
+// Create an unmanaged smart reference from a non-smart variable.
 std::string text{"hello"};
-
-auto generated_text = get_text_length(saam::ref<std::string>(text));
+auto unmanaged_text_ref = saam::ref<std::string>(text);
+auto generated_text = get_text_length(unmanaged_text_ref);
 ```
 
 ## Why Not Use Smart Pointers for Reference Tracking?

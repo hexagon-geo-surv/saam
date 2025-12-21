@@ -13,9 +13,6 @@ namespace saam
 {
 
 template <typename T, borrow_manager TBorrowManager>
-class basic_enable_ref_from_this;
-
-template <typename T, borrow_manager TBorrowManager>
 class basic_var
 {
   public:
@@ -58,6 +55,12 @@ class basic_var
     friend class basic_ref;
 
     T instance_;
+    // if TBorrowManager is unchecked_borrow_manager, this member is optimized away
+#ifdef _MSC_VER
+    [[msvc::no_unique_address]]
+#else
+    [[no_unique_address]]
+#endif
     mutable TBorrowManager borrow_manager_;
 };
 

@@ -41,8 +41,8 @@ class counted_borrow_manager
       protected:
         ref_base() = default;
 
-        ref_base(counted_borrow_manager &borrow_manager) :
-            borrow_manager_(&borrow_manager)
+        ref_base(counted_borrow_manager *borrow_manager) :
+            borrow_manager_(borrow_manager)
         {
             register_self();
         }

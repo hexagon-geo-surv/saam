@@ -27,7 +27,7 @@ class component_b
     component_b(component_b &&other) noexcept = default;
     component_b &operator=(component_b &&other) noexcept = default;
 
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
         if (comp_a_)
         {

@@ -13,6 +13,12 @@
 namespace saam::test
 {
 
+TEST(unchecked_var_test, var_instance_size)
+{
+    // In unchecked mode, var should have the same size as the underlying instance -> no overhead
+    ASSERT_EQ(sizeof(saam::var<std::string>), sizeof(std::string));
+}
+
 TEST(unchecked_var_test, var_instance_move_creation)
 {
     saam::var<std::string> text(std::string("Hello world"));

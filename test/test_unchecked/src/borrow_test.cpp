@@ -13,6 +13,12 @@
 namespace saam::test
 {
 
+TEST(unchecked_borrow_test, ref_instance_size)
+{
+    // In unchecked mode, ref should have the same size as the raw reference -> no overhead
+    ASSERT_EQ(sizeof(saam::ref<std::string>), sizeof(std::string *));
+}
+
 TEST(unchecked_borrow_test, sequential_borrow)
 {
     auto process_text = [](saam::ref<std::string> text) { ++(text->at(0)); };

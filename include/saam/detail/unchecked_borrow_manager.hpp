@@ -17,9 +17,9 @@ class unchecked_borrow_manager
     class ref_base
     {
       public:
-        [[nodiscard]] unchecked_borrow_manager *borrow_manager() const noexcept
+        [[nodiscard]] static unchecked_borrow_manager *borrow_manager() noexcept
         {
-            return borrow_manager_;
+            return nullptr;
         }
 
         // If the underlying raw pointer is managed reference (refrence counted)
@@ -31,42 +31,15 @@ class unchecked_borrow_manager
       protected:
         ref_base() = default;
 
+        ref_base(unchecked_borrow_manager *)
+        {
+        }
+
         ref_base(const ref_base &other) = default;
-
-        // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
-        ref_base(ref_base &&other) noexcept :
-            borrow_manager_(other.borrow_manager_)
-        {
-            // "this" gets always the same reference counter as "other", so the count that "other" looses, gains "this"
-            // -> no modification on the counter needed
-            other.borrow_manager_ = nullptr;
-        }
-
+        ref_base(ref_base &&) noexcept = default;
         ref_base &operator=(const ref_base &other) = default;
-
-        ref_base &operator=(ref_base &&other) noexcept
-        {
-            if (this == &other)
-            {
-                return *this;
-            }
-
-            // Do no allocate a new borrow count for "this", but steal the borrow count from "other"
-            borrow_manager_ = other.borrow_manager_;
-            other.borrow_manager_ = nullptr;
-
-            return *this;
-        }
-
+        ref_base &operator=(ref_base &&) noexcept = default;
         ~ref_base() = default;
-
-        ref_base(unchecked_borrow_manager &borrow_counter) :
-            borrow_manager_(&borrow_counter)
-        {
-        }
-
-      private:
-        unchecked_borrow_manager *borrow_manager_ = nullptr;
     };
 
     // reference management is copied/moved, each var manages its own references

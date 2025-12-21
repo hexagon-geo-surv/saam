@@ -6,6 +6,7 @@
 
 #include <saam/detail/basic_var.hpp>
 #include <saam/detail/constructor_destructor_traits.hpp>
+#include <saam/detail/unchecked_borrow_manager.hpp>
 
 #include <type_traits>
 #include <utility>
@@ -64,7 +65,6 @@ basic_var<T, TBorrowManager> &basic_var<T, TBorrowManager>::operator=(const basi
     }
 
     // Just take the other instance, reference management of "this" and "other" are independent
-    // enable_ref_from_this support is managed by the instance itself via the enable_ref_from_this base class
     instance_ = other.instance_;
     return *this;
 }
@@ -78,7 +78,6 @@ basic_var<T, TBorrowManager> &basic_var<T, TBorrowManager>::operator=(basic_var 
     }
 
     // Just take the other instance, reference management of "this" and "other" are independent
-    // enable_ref_from_this support is managed by the instance itself via the enable_ref_from_this base class
     instance_ = std::move(other.instance_);
     return *this;
 }
@@ -105,7 +104,15 @@ basic_var<T, TBorrowManager>::~basic_var()
 template <typename T, borrow_manager TBorrowManager>
 basic_ref<T, TBorrowManager> basic_var<T, TBorrowManager>::borrow() const noexcept
 {
-    return basic_ref<T, TBorrowManager>(const_cast<basic_var *>(this)->instance_, borrow_manager_);
+    T &instance = const_cast<basic_var *>(this)->instance_;
+    if constexpr (std::is_same_v<TBorrowManager, unchecked_borrow_manager>)
+    {
+        return {instance, nullptr};
+    }
+    else
+    {
+        return {instance, &borrow_manager_};
+    }
 }
 
 template <typename T, borrow_manager TBorrowManager>
@@ -113,7 +120,14 @@ void basic_var<T, TBorrowManager>::call_post_constructor()
 {
     if constexpr (has_post_constructor<T, TBorrowManager>)
     {
-        instance_.post_constructor(borrow_manager_);
+        if constexpr (std::is_same_v<TBorrowManager, unchecked_borrow_manager>)
+        {
+            instance_.post_constructor(nullptr);
+        }
+        else
+        {
+            instance_.post_constructor(&borrow_manager_);
+        }
     }
 }
 
