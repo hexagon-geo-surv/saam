@@ -383,7 +383,7 @@ Tipical scenario for this is a callback holding a reference.
 
 > [!NOTE]
 > The default `borrow_manager_` value is nullptr. A reference created with a null borrow manager, makes an unmanaged reference.
-> In the `subscribe_for_shutdown` function, the `self` reference parameter will be either unmanaged or managed dependeing on the fact if the `post_constructor` is called.
+> In the `subscribe_for_shutdown` function, the `self` reference parameter will be either unmanaged or managed depending on the fact if the `post_constructor` is called.
 
 An alternative solution, is to store the smart self reference in the class, but then make sure that it is freed before the
 class is destructed.
