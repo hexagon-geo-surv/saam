@@ -64,7 +64,6 @@ basic_var<T, TBorrowManager> &basic_var<T, TBorrowManager>::operator=(const basi
     }
 
     // Just take the other instance, reference management of "this" and "other" are independent
-    // enable_ref_from_this support is managed by the instance itself via the enable_ref_from_this base class
     instance_ = other.instance_;
     return *this;
 }
@@ -78,7 +77,6 @@ basic_var<T, TBorrowManager> &basic_var<T, TBorrowManager>::operator=(basic_var 
     }
 
     // Just take the other instance, reference management of "this" and "other" are independent
-    // enable_ref_from_this support is managed by the instance itself via the enable_ref_from_this base class
     instance_ = std::move(other.instance_);
     return *this;
 }

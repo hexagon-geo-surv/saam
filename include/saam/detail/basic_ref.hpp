@@ -109,9 +109,6 @@ class basic_ref : private TBorrowManager::ref_base
     template <typename TOther, borrow_manager TOtherBorrowManager>
     friend class basic_ref;
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
-    friend class basic_enable_ref_from_this_2;
-
     T *instance_ = nullptr;
 };
 

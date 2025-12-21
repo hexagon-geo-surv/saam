@@ -13,9 +13,6 @@ namespace saam
 {
 
 template <typename T, borrow_manager TBorrowManager>
-class basic_enable_ref_from_this;
-
-template <typename T, borrow_manager TBorrowManager>
 class basic_var
 {
   public:
