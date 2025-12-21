@@ -290,7 +290,7 @@ Therefore by default the stack tracing is disabled, and can be enabled for a spe
 Enabling it for a specific type is usually enough, because in `counted` mode the type that had dangling references is known,
 so we just have to narrow it down to the instance to fix the dangling.
 
-This managed mode gives the most detailed information about the danling reference situation.
+This managed mode gives the most detailed information about the dangling reference situation.
 
 #### Unchecked
 No borrow checking takes place, and the `saam::ref` class behaves like an unmanaged smart reference (see below).
