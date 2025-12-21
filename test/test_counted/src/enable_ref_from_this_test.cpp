@@ -16,9 +16,9 @@ namespace saam::test
 class my_class
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
-        borrow_manager_ = &borrow_manager;
+        borrow_manager_ = borrow_manager;
     }
 
     std::function<int(int)> generate_callback() const
@@ -62,9 +62,9 @@ TEST(counted_enable_ref_from_this_test, dangling_ref)
 class my_class_only_post_constructor
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
-        self_ = saam::ref<my_class_only_post_constructor>(*this, &borrow_manager);
+        self_ = saam::ref<my_class_only_post_constructor>(*this, borrow_manager);
     }
 
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
@@ -81,9 +81,9 @@ TEST(counted_enable_ref_from_this_test, self_reference_not_released_before_destr
 class my_class_with_post_constructor_and_pre_destructor
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
-        self_ = saam::ref<my_class_with_post_constructor_and_pre_destructor>(*this, &borrow_manager);
+        self_ = saam::ref<my_class_with_post_constructor_and_pre_destructor>(*this, borrow_manager);
     }
 
     void pre_destructor()

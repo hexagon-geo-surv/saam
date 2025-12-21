@@ -27,13 +27,13 @@ class component_b
     component_b(component_b &&other) noexcept = default;
     component_b &operator=(component_b &&other) noexcept = default;
 
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
         if (comp_a_)
         {
             // at this point the safe self reference is available
             comp_a_->register_callback(
-                [self = saam::ref<component_b>(*this, &borrow_manager)]() { std::cout << "component_b callback called\n"; });
+                [self = saam::ref<component_b>(*this, borrow_manager)]() { std::cout << "component_b callback called\n"; });
         }
     }
 

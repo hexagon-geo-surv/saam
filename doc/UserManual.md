@@ -262,6 +262,8 @@ void dangling_reference_panic(const std::type_info &var_type, void *var_instance
 }
 ```
 
+This managed mode reliably detects the danling reference situation, but does not provide info about the dangling reference instances.
+
 #### Tracked
 When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to.
 The fault report includes the call stack where the `saam::var` was destroyed and the creation stack(s) of the dangling `saam::ref` instance(s). This mode requires C++23 with stacktrace support.
@@ -288,32 +290,30 @@ Therefore by default the stack tracing is disabled, and can be enabled for a spe
 Enabling it for a specific type is usually enough, because in `counted` mode the type that had dangling references is known,
 so we just have to narrow it down to the instance to fix the dangling.
 
+This managed mode gives the most detailed information about the danling reference situation.
+
 #### Unchecked
-No borrow checking takes place, and the `saam::ref` class behaves like a raw reference.
-The `saam::ref` is optimized away by the compiler and the code runs the same as with raw references.
-This mode is recommended when maximum performance is needed, but the `saam` library infrastructure is still used, allowing changing to a safer policy without touching the code.
+No borrow checking takes place, and the `saam::ref` class behaves like an unmanaged smart reference (see below).
+In this mode, managed smart references (extracted from a `saam::var`) become an unmanaged smart reference.
 
-As the unchecked mode does not do reference checking, no panic callback is needed.
+Use this mode for maximum performance to save the cost of the borrow checking when you are confident about the code.
 
-#### Recommended Usage
+### Unmanaged
+When a smart reference refers to a raw C++ variable instead of a `saam::var`, then there are no borrow checks performed.
 
-1. It is recommended to use `counted` mode by default.
+This operation is used mainly for compatibility reasons - see the legacy API section below.
+
+### Recommended Usage
+
+1. It is recommended to use managed `counted` mode by default.
 2. When a borrowing violation is detected, the application panics and crashes.
 3. In a trivial situation, the developer can identify the dangling reference by code inspection.
 4. In a more complex situation, the developer recompiles the code in `tracked` mode and reproduces the error.
 5. When the application runs stable, then one can consider switching to the unchecked mode for maximum performance.
 
-### Unmanaged
-The counted, tracked, unchecked modes are managed modes, only the detail of checks are different. These references all refer to a `saam::var` variable.
-
-In unmanage mode, the `saam::ref` does not refer to `saam::var` variable, but to a "raw" C++ variable.
-The constructor offers a signature, where the `borrow_manager` can be passed as a pointer.
-If this pointer is a `nullptr`, then the reference is unmanaged.
-This mode is used mainly for compatibility reasons - see the legacy API section below.
-
 ### Post-constructor and pre-destructor
 
-A `saam::var` decorated instance may have two public functions `void post_constructor(saam::current_borrow_manager_t &)` 
+A `saam::var` decorated instance may have two public functions `void post_constructor(saam::current_borrow_manager_t *)` 
 and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely.
 
 In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered
@@ -336,9 +336,9 @@ If necessary, then using the "this" pointer and borrow manager, smart references
 ```cpp
 class my_class
 {
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
     {
-        borrow_manager_ = &borrow_manager;
+        borrow_manager_ = borrow_manager;
     }
 
     void subscribe_for_shutdown() 

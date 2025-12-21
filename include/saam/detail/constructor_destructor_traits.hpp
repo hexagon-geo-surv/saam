@@ -12,7 +12,7 @@ namespace saam
 
 template <typename T, typename TBorrowManager>
 concept has_post_constructor = requires(T t, TBorrowManager borrow_mgr) {
-    { t.post_constructor(borrow_mgr) } -> std::same_as<void>;
+    { t.post_constructor(&borrow_mgr) } -> std::same_as<void>;
 };
 
 template <typename T>

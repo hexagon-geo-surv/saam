@@ -55,7 +55,8 @@ class basic_var
     friend class basic_ref;
 
     T instance_;
-    mutable TBorrowManager borrow_manager_;
+    // if TBorrowManager is unchecked_borrow_manager, this member is optimized away
+    [[no_unique_address]] mutable TBorrowManager borrow_manager_;
 };
 
 }  // namespace saam
