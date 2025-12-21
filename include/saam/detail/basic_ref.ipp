@@ -12,7 +12,8 @@
 namespace saam
 {
 template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::basic_ref(T &instance) :
+basic_ref<T, TBorrowManager>::basic_ref(T &instance, TBorrowManager *borrow_manager) :
+    TBorrowManager::ref_base(borrow_manager),
     instance_(&instance)
 {
 }
@@ -56,7 +57,7 @@ template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
 basic_ref<T, TBorrowManager>::basic_ref(const basic_var<TOther, TBorrowManager> &other) noexcept :
     basic_ref(const_cast<basic_var<TOther, TBorrowManager> &>(other).instance_,
-              const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_)
+              &const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_)
 {
 }
 
@@ -122,7 +123,7 @@ template <typename TOther>
 basic_ref<T, TBorrowManager> &basic_ref<T, TBorrowManager>::operator=(const basic_var<TOther, TBorrowManager> &other) noexcept
 {
     operator=(basic_ref(const_cast<basic_var<TOther, TBorrowManager> &>(other).instance_,
-                        const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_));
+                        &const_cast<basic_var<TOther, TBorrowManager> &>(other).borrow_manager_));
 
     return *this;
 }
@@ -180,7 +181,7 @@ template <typename TOther>
 basic_ref<TOther, TBorrowManager> basic_ref<T, TBorrowManager>::static_down_cast() const
 {
     // This is an explicit operation, so it is safe to cast
-    return basic_ref<TOther, TBorrowManager>(static_cast<TOther &>(*instance_), *TBorrowManager::ref_base::borrow_manager());
+    return basic_ref<TOther, TBorrowManager>(static_cast<TOther &>(*instance_), TBorrowManager::ref_base::borrow_manager());
 }
 
 template <typename T, borrow_manager TBorrowManager>
@@ -189,14 +190,7 @@ template <typename TOther>
 basic_ref<TOther, TBorrowManager> basic_ref<T, TBorrowManager>::dynamic_down_cast() const
 {
     // This is an explicit operation, so it is safe to cast
-    return basic_ref<TOther, TBorrowManager>(dynamic_cast<TOther &>(*instance_), *TBorrowManager::ref_base::borrow_manager());
-}
-
-template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::basic_ref(T &instance, TBorrowManager &borrow_manager) :
-    TBorrowManager::ref_base(borrow_manager),
-    instance_(&instance)
-{
+    return basic_ref<TOther, TBorrowManager>(dynamic_cast<TOther &>(*instance_), TBorrowManager::ref_base::borrow_manager());
 }
 
 }  // namespace saam

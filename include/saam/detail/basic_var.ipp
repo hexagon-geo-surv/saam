@@ -105,7 +105,7 @@ basic_var<T, TBorrowManager>::~basic_var()
 template <typename T, borrow_manager TBorrowManager>
 basic_ref<T, TBorrowManager> basic_var<T, TBorrowManager>::borrow() const noexcept
 {
-    return basic_ref<T, TBorrowManager>(const_cast<basic_var *>(this)->instance_, borrow_manager_);
+    return basic_ref<T, TBorrowManager>(const_cast<basic_var *>(this)->instance_, &borrow_manager_);
 }
 
 template <typename T, borrow_manager TBorrowManager>

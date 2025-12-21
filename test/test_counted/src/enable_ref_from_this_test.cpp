@@ -23,7 +23,7 @@ class my_class
 
     std::function<int(int)> generate_callback() const
     {
-        return [self = saam::ref<const my_class>(*this, *borrow_manager_)](int data) { return self->increase(data); };
+        return [self = saam::ref<const my_class>(*this, borrow_manager_)](int data) { return self->increase(data); };
     }
 
   private:
@@ -64,7 +64,7 @@ class my_class_only_post_constructor
   public:
     void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
-        self_ = saam::ref<my_class_only_post_constructor>(*this, borrow_manager);
+        self_ = saam::ref<my_class_only_post_constructor>(*this, &borrow_manager);
     }
 
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
@@ -83,7 +83,7 @@ class my_class_with_post_constructor_and_pre_destructor
   public:
     void post_constructor(saam::current_borrow_manager_t &borrow_manager)
     {
-        self_ = saam::ref<my_class_with_post_constructor_and_pre_destructor>(*this, borrow_manager);
+        self_ = saam::ref<my_class_with_post_constructor_and_pre_destructor>(*this, &borrow_manager);
     }
 
     void pre_destructor()

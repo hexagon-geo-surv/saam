@@ -19,7 +19,7 @@ class base_a
     {
         borrow_manager_ = &borrow_manager;
         // It is possible from now on to create smart references to "this"
-        auto smart_self_ref = saam::ref<base_a>(*this, *borrow_manager_);
+        auto smart_self_ref = saam::ref<base_a>(*this, borrow_manager_);
     }
 
   private:
@@ -34,7 +34,7 @@ class base_b
     {
         borrow_manager_ = &borrow_manager;
         // It is possible from now on to create smart references to "this"
-        auto smart_self_ref = saam::ref<base_b>(*this, *borrow_manager_);
+        auto smart_self_ref = saam::ref<base_b>(*this, borrow_manager_);
     }
 
   private:
@@ -94,7 +94,7 @@ class best_practice : private base_a, private base_b
     auto get_data_comparator()
     {
         // Capturing the smart reference into the callback ensures a valid call destination.
-        auto external_callback = [self = saam::ref<best_practice>(*this, *borrow_manager_)](int data_query) {
+        auto external_callback = [self = saam::ref<best_practice>(*this, borrow_manager_)](int data_query) {
             return data_query == self->synced_m_.lock()->data;
         };
         return external_callback;

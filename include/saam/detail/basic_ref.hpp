@@ -18,13 +18,9 @@ template <typename T, borrow_manager TBorrowManager>
 class basic_ref : private TBorrowManager::ref_base
 {
   public:
-    // Unmanaged reference constructor
-    // Used with legacy client, which only has raw references
-    // This case, there is no borrow checking
-    explicit basic_ref(T &instance);
-
-    // Managed reference constructor
-    basic_ref(T &instance, TBorrowManager &borrow_manager);
+    // Managed reference constructor, where borrow manager is provided
+    // Otherwise it is an unmanaged reference
+    basic_ref(T &instance, TBorrowManager *borrow_manager = nullptr);
 
     // Conversion copy constructor
     template <typename TOther>

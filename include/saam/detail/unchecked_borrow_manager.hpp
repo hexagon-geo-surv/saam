@@ -31,6 +31,11 @@ class unchecked_borrow_manager
       protected:
         ref_base() = default;
 
+        ref_base(unchecked_borrow_manager *borrow_manager) :
+            borrow_manager_(borrow_manager)
+        {
+        }
+
         ref_base(const ref_base &other) = default;
 
         // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
@@ -59,11 +64,6 @@ class unchecked_borrow_manager
         }
 
         ~ref_base() = default;
-
-        ref_base(unchecked_borrow_manager &borrow_counter) :
-            borrow_manager_(&borrow_counter)
-        {
-        }
 
       private:
         unchecked_borrow_manager *borrow_manager_ = nullptr;
