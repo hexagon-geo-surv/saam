@@ -56,7 +56,12 @@ class basic_var
 
     T instance_;
     // if TBorrowManager is unchecked_borrow_manager, this member is optimized away
-    [[no_unique_address]] mutable TBorrowManager borrow_manager_;
+#ifdef _MSC_VER
+    [[msvc::no_unique_address]]
+#else
+    [[no_unique_address]]
+#endif
+    mutable TBorrowManager borrow_manager_;
 };
 
 }  // namespace saam
