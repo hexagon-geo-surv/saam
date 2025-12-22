@@ -18,9 +18,8 @@ template <typename T, borrow_manager TBorrowManager>
 class basic_ref : private TBorrowManager::ref_base
 {
   public:
-    // Managed reference constructor, where borrow manager is provided
-    // Otherwise it is an unmanaged reference
-    basic_ref(T &instance, TBorrowManager *borrow_manager = nullptr);
+    // Unmanaged reference constructor
+    basic_ref(T &instance);
 
     // Conversion copy constructor
     template <typename TOther>
@@ -103,6 +102,9 @@ class basic_ref : private TBorrowManager::ref_base
     basic_ref<TOther, TBorrowManager> dynamic_down_cast() const;
 
   private:
+    // Managed reference constructor
+    basic_ref(T &instance, TBorrowManager *borrow_manager);
+
     template <typename TOther, borrow_manager TOtherBorrowManager>
     friend class basic_var;
 

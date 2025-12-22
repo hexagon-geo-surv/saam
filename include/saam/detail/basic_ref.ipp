@@ -11,6 +11,13 @@
 
 namespace saam
 {
+
+template <typename T, borrow_manager TBorrowManager>
+basic_ref<T, TBorrowManager>::basic_ref(T &instance) :
+    basic_ref(instance, nullptr)
+{
+}
+
 template <typename T, borrow_manager TBorrowManager>
 basic_ref<T, TBorrowManager>::basic_ref(T &instance, TBorrowManager *borrow_manager) :
     TBorrowManager::ref_base(borrow_manager),

@@ -122,11 +122,11 @@ void basic_var<T, TBorrowManager>::call_post_constructor()
     {
         if constexpr (std::is_same_v<TBorrowManager, unchecked_borrow_manager>)
         {
-            instance_.post_constructor(nullptr);
+            instance_.post_constructor(basic_ref<T, TBorrowManager>{instance_, nullptr});
         }
         else
         {
-            instance_.post_constructor(&borrow_manager_);
+            instance_.post_constructor(basic_ref<T, TBorrowManager>{instance_, &borrow_manager_});
         }
     }
 }
