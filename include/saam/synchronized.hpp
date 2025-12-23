@@ -25,7 +25,7 @@ class synchronized
     synchronized() = default;
 
     template <typename... Args>
-    explicit synchronized(Args &&...args) :
+    explicit synchronized(std::in_place_t, Args &&...args) :
         protected_instance_(std::forward<Args>(args)...)
     {
     }

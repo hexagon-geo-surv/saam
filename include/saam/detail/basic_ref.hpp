@@ -79,13 +79,12 @@ class basic_ref : private TBorrowManager::ref_base
     [[nodiscard]] T *operator->() const noexcept;
 
     // Dereference operator
-    [[nodiscard]] T &operator*() const noexcept;
-
-    // rvalue reference access
-    [[nodiscard]] T &&rval_ref() const noexcept;
+    [[nodiscard]] T &operator*() const & noexcept;
+    [[nodiscard]] T &&operator*() const && noexcept;
 
     // Cast to T reference
-    [[nodiscard]] explicit operator T &() const noexcept;
+    [[nodiscard]] explicit operator T &() const & noexcept;
+    [[nodiscard]] explicit operator T &&() const && noexcept;
 
     // Cast to T pointer
     [[nodiscard]] explicit operator T *() const noexcept;

@@ -104,14 +104,14 @@ class sentinel
         return protected_instance_.operator->();
     }
 
-    [[nodiscard]] T &operator*() const
+    [[nodiscard]] T &operator*() const &
     {
-        return protected_instance_.operator*();
+        return *protected_instance_;
     }
 
-    [[nodiscard]] T &&rval_ref() const
+    [[nodiscard]] T &&operator*() const &&
     {
-        return protected_instance_.rval_ref();
+        return *std::move(protected_instance_);
     }
 
   private:

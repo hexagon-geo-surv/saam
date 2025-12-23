@@ -77,8 +77,7 @@ class best_practice : public base_a, public base_b
     // The smart mutex is not movable (because the STL mutex is also not movable)
     // Move only the "members" from the other instance under the control of "this" smart mutex.
     best_practice(best_practice &&other) noexcept :
-        synced_m_(
-            std::move(other.synced_m_.lock_mut().rval_ref()))  // Locked "other" prevents modifications in "other" during the move operation
+        synced_m_(*std::move(other.synced_m_.lock_mut()))  // Locked "other" prevents modifications in "other" during the move operation
     {
     }
 

@@ -194,6 +194,26 @@ vec.emplace_back("world");
 In more complex situations, when the reference is stored in classes/containers/callbacks,
 the compiler is likely cannot notice this situation and no warning is issued. The `saam::ref` reliably alarms in such cases, too.
 
+## Smart variable creation
+
+```cpp
+saam::var<std::string> text("Hello world");
+```
+This syntax looks straight forward, but there are some things running in the background.
+1, the string literal will create temporal (lvalue) `std::string`
+2, the `saam::var::var(std::string &&instance)` constructor is called and the string is moved into the `saam::var`
+
+If we spell out all the details, this is what really happens here:
+```cpp
+saam::var<std::string> text(std::move(std::string("Hello world")));
+```
+
+If it is necessary to create the `std::string` directly inside the `saam::var`, then another constructor is available:
+```cpp
+saam::var<std::string> text(std::in_place{}, "Hello world");
+```
+This is also the way to go when the `saam::var` wrapped type has multiple constructor parameters. This is similar to the `std::optional` creation schemes.
+
 ## Casting references
 
 Smart references are casted similar to the regular references.

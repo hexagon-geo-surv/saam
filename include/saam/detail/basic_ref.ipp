@@ -155,17 +155,31 @@ T *basic_ref<T, TBorrowManager>::operator->() const noexcept
 }
 
 template <typename T, borrow_manager TBorrowManager>
-T &basic_ref<T, TBorrowManager>::operator*() const noexcept
+T &basic_ref<T, TBorrowManager>::operator*() const & noexcept
 {
     // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
     return *instance_;
 }
 
 template <typename T, borrow_manager TBorrowManager>
-basic_ref<T, TBorrowManager>::operator T &() const noexcept
+[[nodiscard]] T &&basic_ref<T, TBorrowManager>::operator*() const && noexcept
+{
+    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    return std::move(*instance_);
+}
+
+template <typename T, borrow_manager TBorrowManager>
+basic_ref<T, TBorrowManager>::operator T &() const & noexcept
 {
     // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
     return *instance_;
+}
+
+template <typename T, borrow_manager TBorrowManager>
+basic_ref<T, TBorrowManager>::operator T &&() const && noexcept
+{
+    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    return std::move(*instance_);
 }
 
 template <typename T, borrow_manager TBorrowManager>
@@ -173,13 +187,6 @@ basic_ref<T, TBorrowManager>::operator T *() const noexcept
 {
     // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
     return instance_;
-}
-
-template <typename T, borrow_manager TBorrowManager>
-[[nodiscard]] T &&basic_ref<T, TBorrowManager>::rval_ref() const noexcept
-{
-    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
-    return std::move(*instance_);
 }
 
 template <typename T, borrow_manager TBorrowManager>

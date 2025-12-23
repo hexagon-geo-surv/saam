@@ -22,7 +22,7 @@ basic_var<T, TBorrowManager>::basic_var()
 
 template <typename T, borrow_manager TBorrowManager>
 template <typename... Args>
-basic_var<T, TBorrowManager>::basic_var(Args &&...args) :
+basic_var<T, TBorrowManager>::basic_var(std::in_place_t, Args &&...args) :
     instance_(std::forward<Args>(args)...)
 {
     call_post_constructor();
