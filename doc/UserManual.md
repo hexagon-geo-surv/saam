@@ -71,7 +71,7 @@ saam::var<std::string> name("Hello World");
 `saam::var` uniquely owns the wrapped type - it is responsible to destroy it when its lifetime expires.
 
 Note, that the `saam::var` does not provide any access to the underlying type (`std::string`).
-You cannot read or write the string via `saam::var`. The only thing `saam::var` is for, is to serve as a factory for of smart references. Those references are used for the data manipulation.
+You cannot read or write the string via `saam::var`. The only thing `saam::var` is for, is to serve as a factory for smart references. Those references are used for the data manipulation.
 
 This behavior is similar to smart pointers. The object on the heap is just a data storage, just like an `saam::var`.
 Nobody accesses the object on the heap directly, but uses its proxies (`std::shared_ptr`, `std::unique_ptr`).
@@ -200,8 +200,8 @@ the compiler is likely cannot notice this situation and no warning is issued. Th
 saam::var<std::string> text("Hello world");
 ```
 This syntax looks straight forward, but there are some things running in the background.
-1, the string literal will create temporal (lvalue) `std::string`
-2, the `saam::var::var(std::string &&instance)` constructor is called and the string is moved into the `saam::var`
+1. the string literal will create temporal (lvalue) `std::string`
+2. the `saam::var::var(std::string &&instance)` constructor is called and the string is moved into the `saam::var`
 
 If we spell out all the details, this is what really happens here:
 ```cpp
@@ -331,79 +331,44 @@ This operation is used mainly for compatibility reasons - see the legacy API sec
 4. In a more complex situation, the developer recompiles the code in `tracked` mode and reproduces the error.
 5. When the application runs stable, then one can consider switching to the unchecked mode for maximum performance.
 
-### Post-constructor and pre-destructor
+## Post-constructor and pre-destructor
 
-A `saam::var` decorated instance may have two public functions `void post_constructor(saam::current_borrow_manager_t *)` 
+A `saam::var` decorated instance may have two public functions `void post_constructor(saam::ref<T>)` 
 and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely.
 
 In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered
 to be usable, because the object is not yet created.
 Therefore if a post-constructor exists, it is called and there the self reference is already available.
-It is ideal place to start create callbacks or any other objects, which
-needs to know the smart reference of the object.
+It is ideal place to create callbacks or any other objects, which needs to know the smart reference of the object.
 
 The pre-destructor is a called before `saam::var` destroys the wrapped instance. This is a great place
 to put code to revoke outstanding smart references, like cancelling callbacks, etc.
 
 ## Smart `Self` reference
 
-Sometimes object need to know their smart references.
-The `saam` smart variable also offers this feature, which can be very handy for callbacks.
-
-When a class has post-constructor, then the class receives its borrow manager there.
-If necessary, then using the "this" pointer and borrow manager, smart references can be constructed.
+Sometimes object need to know their self smart references - for example to capture it into a callback.
 
 ```cpp
 class my_class
 {
-    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
+    void post_constructor(saam::ref<best_practice> self)
     {
-        borrow_manager_ = borrow_manager;
-    }
-
-    void subscribe_for_shutdown() 
-    {
-        // create a smart reference based on the "this" pointer and the borrow manager
-        // the reference can be managed or unmanaged - depending on the borrow_manager_ pointer
-        subscription_ = shutdown_controller_->on_shutdown([self = saam::ref<best_practice>(*this, borrow_manager_)]() {
+        subscription_ = shutdown_controller_->on_shutdown([self]() {
             self->print_status();
         });
     }
 
-    void print_status();
-
-    void release_callbacks()
+    void pre_destructor()
     {
-        subscription_.release();
+        // Revoke the callback, because it contains a reference to my_class.
+        // This would make a panic when my_class is destroyed.
+        subscription_.reset();
     }
 
-    saam::current_borrow_manager_t *borrow_manager_{nullptr};
     signal_subscription subscription_;
     saam::ref<shutdown_controller> shutdown_controller_;
 };
-
-auto mycls = std::make_shared<var<my_class>>(......);
-mycls->borrow()->subscribe_for_shutdown();
-
-// Callback contains reference to mycls, therefore it must be released before mycls can be safely destroyed
-mycls->borrow()->release_callbacks();
-mycls.reset(); 
-
 ```
-
-The borrow checker is strict here: We want to destroy the `my_class` instance. But there is an outstanding reference inside the callback registered to `shutdown_controller`,
-the application will panic due to a dangling reference in the callback.
-
-To overcome this problem, `my_class` must first revoke its callbacks before it can be destroyed.
-This ensures there is no moment in the system where a dangling reference exists, not even temporarily.
-
-This problem is similar to the `std::shared_ptr` circular reference problem. There the released circular set of objects will be leaking (memory and other resources),
-because their constructor will be not called. Here, a panic is triggered when a reference in another object is still alive when the smart variable is destroyed.
-Tipical scenario for this is a callback holding a reference.
-
-> [!NOTE]
-> The default `borrow_manager_` value is nullptr. A reference created with a null borrow manager, makes an unmanaged reference.
-> In the `subscribe_for_shutdown` function, the `self` reference parameter will be either unmanaged or managed depending on the fact if the `post_constructor` is called.
 
 An alternative solution, is to store the smart self reference in the class, but then make sure that it is freed before the
 class is destructed.
@@ -411,21 +376,30 @@ class is destructed.
 ```cpp
 class my_class
 {
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::ref<best_practice> self)
     {
-        // From this point on, smart references can be created.
-        smart_self_ = saam::ref<my_class>(*this, &borrow_manager);
+        self_ = std::move(self);
+    }
+
+    void subscribe_poweroff_event()
+    {
+        subscription_ = shutdown_controller_->on_shutdown([self = *self_]() {
+            self->print_status();
+        });
     }
 
     void pre_destructor()
     {
-        // Release the self reference before destruction, so that the instance does not contain
-        // a reference to self during destruction.
-        smart_self_.reset();
+        subscription_.reset();
+        self_.reset();
     }
 
-    // It is too early to create the smart_self in the constructor, hence the std::optional
-    std::optional<saam::ref<my_class_with_post_constructor_and_pre_destructor>> smart_self_;
+    // The self reference must be wrapped into an optional, so that it can be ditched before my_class is destroyed.
+    // The self reference is initialized in unmanaged mode (with the "this" reference), and later in the post_constructor it may be upgraded to managed reference.
+    // This ensures, that both in managed and unmanaged instance of my_class, the self_ reference is valid.
+    std::optional<saam::ref<my_class>> self_{*this};
+    signal_subscription subscription_;
+    saam::ref<shutdown_controller> shutdown_controller_;
 };
 ```
 
@@ -582,21 +556,22 @@ The following case study shows how to synchronize member variables of a class. T
 but also overcomes the constructor initialization list constraints.
 
 ```cpp
-class my_class : public saam::enable_ref_from_this<my_class>
+class my_class
 {
-    // Data members of the class are grouped into one or more struct(s)
-    // Each of these aggregates will be protected by a mutex
+    // Data members of the class are grouped into one struct, protected by a mutex
     struct members
     {
         int data = 0;
+        std::vector<std::string> data_collection;
 
         static members create(int data)
         {
             // Prepare the members; the object does not exist yet
             // If something is wrong with the creation, exit at this stage
+            std::vector<std::string> data_collection(10, "Hello");
 
             // Push the created components into the struct
-            return {.data = data};
+            return {.data = data, .data_collection = std::move(data_collection)};
         }
     };
 
@@ -615,34 +590,13 @@ class my_class : public saam::enable_ref_from_this<my_class>
     // The smart mutex is not movable (because the STL mutex is also not movable)
     // Move only the "members" from the other instance under the control of "this" smart mutex.
     my_class(my_class &&other)
-        : sync_m(std::move(*other.sync_m.lock())) // Locked "other" prevents modifications in "other" during the move operation
+        : sync_m(*std::move(other.sync_m.lock())) // Locked "other" prevents modifications in "other" during the move operation
     {
     }
 
-    auto get_data_comparator()
-    {
-        // Capturing the smart reference into the callback ensures a valid call destination.
-        // Lock to members is created on demand in the callback
-        auto external_callback = [self = borrow_from_this()](int data_query) { return data_query == self->sync_m.lock()->data; };
-        return external_callback;
-    }
 };
 
-
-int main()
-{
-constexpr int value = 5;
-
-saam::var<best_practice> bestprac(value);
-auto comparator = bestprac.borrow()->get_data_comparator();
-
-comparator(value); // Returns true, callback was successfully called
-}
 ```
-
-- Smart reference makes sure that callbacks do not contain invalid self reference
-- There is only synchronized access to the members possible
-- Callbacks have access to the synchronized members
 
 # Smart memory-management tools
 
@@ -662,7 +616,7 @@ All access goes through `Proxy` types.
 It provides no extra functionality over the raw variable and references, and therefore it has
 zero cost compared to raw references.
 
-There is not functionality in this mode, so neither the `saam::var` nor the `saam::ref`
+There is no additional functionality in this mode, so neither the `saam::var` nor the `saam::ref`
 takes up more space than a raw scoped variable or a raw reference.
 
 ## Counted mode

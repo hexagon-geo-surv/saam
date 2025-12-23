@@ -8,6 +8,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cassert>
 #include <utility>
 
 namespace saam::test
@@ -38,6 +39,7 @@ class best_practice : public base_a, public base_b
 {
     // Data members of the class are grouped into one or more struct(s)
     // Each of these aggregates will be protected by a mutex
+    // Idea was inspired by https://www.youtube.com/watch?v=KWB-gDVuy_I
     struct members
     {
         int data = 0;
@@ -54,7 +56,7 @@ class best_practice : public base_a, public base_b
         }
     };
 
-    std::optional<saam::ref<best_practice>> self_;
+    std::optional<saam::ref<best_practice>> self_{*this};
     // Smart mutex to synchronize member variables
     saam::synchronized<members> synced_m_;
 
@@ -83,6 +85,7 @@ class best_practice : public base_a, public base_b
 
     auto get_data_comparator()
     {
+        assert(self_.has_value());
         // Capturing the smart reference into the callback ensures a valid call destination.
         auto external_callback = [self = *self_](int data_query) { return data_query == self->synced_m_.lock()->data; };
         return external_callback;
