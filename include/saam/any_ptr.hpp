@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
+#pragma once
+
 #include <saam/safe_ref.hpp>
 
 #include <functional>

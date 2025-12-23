@@ -8,6 +8,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cassert>
 #include <utility>
 
 namespace saam::test
@@ -15,38 +16,30 @@ namespace saam::test
 class base_a
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::ref<base_a> self)
     {
-        borrow_manager_ = &borrow_manager;
-        // It is possible from now on to create smart references to "this"
-        auto smart_self_ref = saam::ref<base_a>(*this, borrow_manager_);
     }
 
   private:
-    saam::current_borrow_manager_t *borrow_manager_{nullptr};
     int num_{0};
 };
 
 class base_b
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::ref<base_b> self)
     {
-        borrow_manager_ = &borrow_manager;
-        // It is possible from now on to create smart references to "this"
-        auto smart_self_ref = saam::ref<base_b>(*this, borrow_manager_);
     }
 
   private:
-    saam::current_borrow_manager_t *borrow_manager_{nullptr};
     double flnum_{0.0};
 };
 
-// class best_practice : public saam::enable_ref_from_this<best_practice>, private a, private b
-class best_practice : private base_a, private base_b
+class best_practice : public base_a, public base_b
 {
     // Data members of the class are grouped into one or more struct(s)
     // Each of these aggregates will be protected by a mutex
+    // Idea was inspired by https://www.youtube.com/watch?v=KWB-gDVuy_I
     struct members
     {
         int data = 0;
@@ -63,7 +56,7 @@ class best_practice : private base_a, private base_b
         }
     };
 
-    saam::current_borrow_manager_t *borrow_manager_{nullptr};
+    std::optional<saam::ref<best_practice>> self_{*this};
     // Smart mutex to synchronize member variables
     saam::synchronized<members> synced_m_;
 
@@ -75,29 +68,33 @@ class best_practice : private base_a, private base_b
     {
     }
 
-    void post_constructor(saam::current_borrow_manager_t &borrow_manager)
+    void post_constructor(saam::ref<best_practice> self)
     {
-        borrow_manager_ = &borrow_manager;
+        self_ = std::move(self);
         // Propagate the post_constructor call to base classes
-        base_a::post_constructor(borrow_manager);
-        base_b::post_constructor(borrow_manager);
+        base_a::post_constructor(*self_);
+        base_b::post_constructor(*self_);
     }
 
     // The smart mutex is not movable (because the STL mutex is also not movable)
     // Move only the "members" from the other instance under the control of "this" smart mutex.
     best_practice(best_practice &&other) noexcept :
-        synced_m_(
-            std::move(other.synced_m_.lock_mut().rval_ref()))  // Locked "other" prevents modifications in "other" during the move operation
+        synced_m_(std::move(*other.synced_m_.lock_mut()))  // Locked "other" prevents modifications in "other" during the move operation
     {
     }
 
     auto get_data_comparator()
     {
+        assert(self_.has_value());
         // Capturing the smart reference into the callback ensures a valid call destination.
-        auto external_callback = [self = saam::ref<best_practice>(*this, borrow_manager_)](int data_query) {
-            return data_query == self->synced_m_.lock()->data;
-        };
+        // The access to "data" is done via a temporal sentinel, but the locking is only temporal.
+        auto external_callback = [self = *self_](int data_query) { return data_query == self->synced_m_.lock()->data; };
         return external_callback;
+    }
+
+    void pre_destructor()
+    {
+        self_.reset();
     }
 };
 

@@ -99,19 +99,28 @@ class sentinel
 
     ~sentinel() = default;
 
+    // Arrow operator
     [[nodiscard]] T *operator->() const
     {
         return protected_instance_.operator->();
     }
 
+    // Dereference operator
     [[nodiscard]] T &operator*() const
     {
-        return protected_instance_.operator*();
+        return *protected_instance_;
     }
 
-    [[nodiscard]] T &&rval_ref() const
+    // Cast to T reference
+    [[nodiscard]] explicit operator T &() const noexcept
     {
-        return protected_instance_.rval_ref();
+        return *protected_instance_;
+    }
+
+    // Cast to T pointer
+    [[nodiscard]] explicit operator T *() const noexcept
+    {
+        return static_cast<T *>(protected_instance_);
     }
 
   private:
@@ -142,6 +151,7 @@ class sentinel
     std::unique_lock<std::shared_mutex> lock_;
 };
 
+// The underlying lock is a shared lock for const access, so a separate implementation is needed.
 template <typename T>
 class sentinel<const T>
 {
@@ -272,15 +282,30 @@ class sentinel<const T>
 
     ~sentinel() = default;
 
+    // Arrow operator
     [[nodiscard]] const T *operator->() const
     {
         return protected_instance_.operator->();
     }
 
+    // Dereference operator
     [[nodiscard]] const T &operator*() const
     {
-        return protected_instance_.operator*();
+        return *protected_instance_;
     }
+
+    // Cast to T reference
+    [[nodiscard]] explicit operator const T &() const noexcept
+    {
+        return *protected_instance_;
+    }
+
+    // Cast to T pointer
+    [[nodiscard]] explicit operator const T *() const noexcept
+    {
+        return static_cast<const T *>(protected_instance_);
+    }
+
 
   private:
     template <typename TOther>

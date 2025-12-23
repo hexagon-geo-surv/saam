@@ -7,6 +7,7 @@
 #include "component_a.hpp"
 #include "component_b.hpp"
 
+#include <saam/any_ptr.hpp>
 #include <saam/safe_ref.hpp>
 
 #include <utility>
@@ -18,7 +19,7 @@ class system
 {
   public:
     system() :
-        component_b_(make_any_ptr(component_a_))
+        component_b_(std::in_place_t{}, saam::make_any_ptr(component_a_))
     {
     }
 

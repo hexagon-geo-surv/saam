@@ -4,10 +4,14 @@
 
 #include "system.hpp"
 
-#include <saam/safe_ref.hpp>
-
 #include <iostream>
 #include <ostream>
+
+#include <typeinfo>
+
+#if SAAM_BORROW_CHECKING_MODE == 1
+#include <stacktrace>
+#endif
 
 namespace saam
 {

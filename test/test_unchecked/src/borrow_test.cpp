@@ -15,7 +15,7 @@ namespace saam::test
 
 TEST(unchecked_borrow_test, ref_instance_size)
 {
-    // In unchecked mode, ref should have the same size as the raw reference -> no overhead
+    // In unchecked mode, ref should have the same size as the raw reference/pointer -> no overhead
     ASSERT_EQ(sizeof(saam::ref<std::string>), sizeof(std::string *));
 }
 

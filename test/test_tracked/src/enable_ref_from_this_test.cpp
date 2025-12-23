@@ -16,23 +16,27 @@ namespace saam::test
 class my_class
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
-    {
-        borrow_manager_ = borrow_manager;
-    }
-
     std::function<int(int)> generate_callback() const
     {
-        return [self = saam::ref<const my_class>(*this, borrow_manager_)](int data) { return self->increase(data); };
+        return [self = *self_](int data) { return self->increase(data); };
     }
 
-  private:
     int increase(int data) const
     {
         return data + increment_;
     }
 
-    saam::current_borrow_manager_t *borrow_manager_{nullptr};
+    void post_constructor(saam::ref<my_class> self)
+    {
+        self_ = std::move(self);
+    }
+
+    void pre_destructor()
+    {
+        self_.reset();
+    }
+
+    std::optional<saam::ref<my_class>> self_;
     int increment_ = 1;
 };
 
@@ -62,9 +66,9 @@ TEST(tracked_enable_ref_from_this_test, dangling_ref)
 class my_class_only_post_constructor
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
+    void post_constructor(saam::ref<my_class_only_post_constructor> self)
     {
-        self_ = saam::ref<my_class_only_post_constructor>(*this, borrow_manager);
+        self_ = std::move(self);
     }
 
     std::optional<saam::ref<my_class_only_post_constructor>> self_;
@@ -72,18 +76,18 @@ class my_class_only_post_constructor
 
 TEST(tracked_enable_ref_from_this_test, self_reference_not_released_before_destruction)
 {
-    // The smart self reference is not released before destruction. This dangling reference create a panic at destruction time.
-    auto owning_self_reference_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
+    // The smart self reference is not released before destruction. This dangling reference creates a panic at destruction time.
+    auto owning_reference_to_self_at_destruction = []() { saam::var<my_class_only_post_constructor> my_inst; };
 
-    EXPECT_DEATH(owning_self_reference_at_destruction(), ".*");
+    EXPECT_DEATH(owning_reference_to_self_at_destruction(), ".*");
 }
 
 class my_class_with_post_constructor_and_pre_destructor
 {
   public:
-    void post_constructor(saam::current_borrow_manager_t *borrow_manager)
+    void post_constructor(saam::ref<my_class_with_post_constructor_and_pre_destructor> self)
     {
-        self_ = saam::ref<my_class_with_post_constructor_and_pre_destructor>(*this, borrow_manager);
+        self_ = std::move(self);
     }
 
     void pre_destructor()

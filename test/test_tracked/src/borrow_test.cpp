@@ -45,6 +45,20 @@ TEST(tracked_borrow_test, parallel_borrow)
     ASSERT_EQ(text_immut2->at(0), 'Y');
 }
 
+TEST(tracked_borrow_test, dereferencing)
+{
+    saam::var<int> number(22);
+
+    saam::ref<int> number_mut = number;
+    // Assign an lvalue ref
+    *number_mut = 23;
+    ASSERT_EQ(*number.borrow(), 23);
+
+    // Assign an rvalue ref
+    *number.borrow() = 24;
+    ASSERT_EQ(*number.borrow(), 24);
+}
+
 TEST(tracked_borrow_test, nullable_ref)
 {
     saam::var<std::string> text("Hello world");
@@ -103,6 +117,18 @@ TEST(tracked_borrow_test, borrow_move_copy_same_instance_assignment)
 
     textref2 = std::move(textref1);
     ASSERT_EQ(textref2->at(0), 'H');
+}
+
+TEST(tracked_borrow_test, moving_instance)
+{
+    saam::var<std::string> text("Hello world");
+
+    saam::ref<std::string> text_ref(text);
+
+    std::string text_moved = std::move(*text_ref);
+
+    ASSERT_EQ(text_moved, "Hello world");
+    ASSERT_TRUE(text_ref->empty());
 }
 
 }  // namespace saam::test

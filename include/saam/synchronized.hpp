@@ -25,7 +25,7 @@ class synchronized
     synchronized() = default;
 
     template <typename... Args>
-    explicit synchronized(Args &&...args) :
+    explicit synchronized(std::in_place_t, Args &&...args) :
         protected_instance_(std::forward<Args>(args)...)
     {
     }
@@ -119,7 +119,8 @@ class synchronized
     friend class condition;
 
     mutable std::shared_mutex protector_mutex_;
-
+    // When a shared mutex is released in a locked state, it is an undefined behavior.
+    // Wrapping the instance in var and locks take a ref, this situation is detected.
     saam::var<T> protected_instance_;
 };
 

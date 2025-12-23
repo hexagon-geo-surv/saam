@@ -38,6 +38,23 @@ TEST_F(sentinel_test, create_mutable_from_synchronized)
     ASSERT_EQ(locked_text->at(0), 'Y');
 }
 
+TEST_F(sentinel_test, dereferencing)
+{
+    saam::synchronized<int> number(5);
+
+    {
+        saam::sentinel<int> locked_number(number);
+
+        // Assign an lvalue ref
+        *locked_number = 23;
+        ASSERT_EQ(*locked_number, 23);
+    }
+
+    // Assign an rvalue ref
+    *number.lock_mut() = 24;
+    ASSERT_EQ(*number.lock(), 24);
+}
+
 TEST_F(sentinel_test, copy_construct_immutable)
 {
     saam::sentinel<const std::string> locked_text(text_);
