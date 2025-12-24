@@ -111,4 +111,20 @@ TEST(unchecked_borrow_test, borrow_move_copy_same_instance_assignment)
     ASSERT_EQ(textref2->at(0), 'H');
 }
 
+TEST(unchecked_borrow_test, comparison)
+{
+    saam::var<std::string> text("Hello world");
+    saam::var<std::string> text2("Welcome world");
+
+    saam::ref<std::string> text1_ref(text);
+    saam::ref<std::string> text1_ref2(text);
+    saam::ref<std::string> text3_ref(text2);
+
+    ASSERT_TRUE(text1_ref == text1_ref2);
+    ASSERT_FALSE(text1_ref != text1_ref2);
+
+    ASSERT_FALSE(text1_ref == text3_ref);
+    ASSERT_TRUE(text1_ref != text3_ref);
+}
+
 }  // namespace saam::test
