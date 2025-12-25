@@ -78,9 +78,6 @@ Nobody accesses the object on the heap directly, but uses its proxies (`std::sha
 The difference here is: for smart pointers the heap object (data storage) is invisible for the outside world, for `saam::var`
 it is visible.
 
-Not providing access at the owner object is common with the smart mutex library. One needs to lock the mutex (owner object)
-and the object can be accessed only via the proxy (locks).
-
 # Aliasing model
 
 Raw C++ references (like `int&`) are similar in capability to raw pointers (like `int*`). They are fast but do not provide any safety against dangling.
@@ -92,9 +89,11 @@ std::string& greet()
     return std::string("Hello World"); 
 };
 ```
+The compiler may detect such trivial situations, but more complex dangling scenarios will be not detected with static analysis.
+
 ## Smart References
 
-`saam` replaces raw references with `saam::ref` smart references, just like smart pointers supersede raw pointers in safe contexts.
+`saam` improve on raw references with `saam::ref` smart references, just like smart pointers supersede raw pointers.
 
 <img src="Stack.svg" alt="Stack" style="width:60%;" />
 
@@ -126,16 +125,15 @@ auto size = name.borrow()->size();
 ```
 
 Advantages of smart references over raw references:
+- `saam` can detect dangling reference situations
 - `saam::ref` a reference is always bound to an object and this binding is never a dangling one!
 - `saam::ref` can be augmented with `std::optional`, so it can be unbound, default constructed
 - `saam::ref` is reassignable - unlike raw references.
 - A class that owns `saam::ref`s can be copy/move assigned due to reassignability of the smart reference - unlike raw references.
 
-## Heap variables
+## Smart variables on the heap
 
-In some cases, when the lifetime of the scope is not enough for the variable, the variable must be moved/created on the heap.
-This can extend the lifetime of the variable indefinitely.
-C++ smart pointers are the safe way to do that. Smart pointers are owning references with unique and shared ownership.
+In some cases, when the lifetime of the scope is not enough for the variable, the variable must be moved/created on the heap. This can extend the lifetime of the variable indefinitely. C++ smart pointers are the safe way to do that. Smart pointers are owning references with unique and shared ownership.
 
 The string still has the smartness regarding to aliasing (non owning references), but it resides on the heap now.
 ```cpp
@@ -153,7 +151,6 @@ auto name = std::make_unique<saam::var<std::string>>("Hello World");
 ## Detected errors
 
 The following snippet demonstrates returning a reference to an object that is destroyed on function exit.
-The compiler often warns about this trivial case but does not necessarily report an error.
 The `saam` library detects this during runtime and panics when it happens.
 
 ```cpp
@@ -176,8 +173,7 @@ saam::var<std::string> text{"hello"};
 maybe_text_ref = text;
 ```
 
-Another classical example from Rust. The container internal buffer maybe reallocated when a new element is pushed into the container.
-This reallocation invalidates existing references and this is detected by `saam`.
+Another classical example from Rust. The container internal buffer maybe reallocated when a new element is pushed into the container. This reallocation invalidates existing references and this is detected by `saam`.
 
 ```cpp
 std::vector<saam::var<std::string>> vec;
@@ -186,7 +182,7 @@ vec.reserve(1); // Allocate an internal buffer for only one element
 vec.emplace_back("hello");
 saam::ref<std::string> text_ref = vec.back();
 
-// The new element does not fit into the current buffer (size of 1 at the moment), buffer reallocation is needed.
+// The new element does not fit into the current capacity (size of 1 at the moment), buffer reallocation is needed.
 // The reallocation invalidates the reference (text_ref). -> PANIC!
 vec.emplace_back("world");
 ```
@@ -201,14 +197,15 @@ saam::var<std::string> text("Hello world");
 ```
 This syntax looks straight forward, but there are some things running in the background.
 1. the string literal will create temporal (lvalue) `std::string`
-2. the `saam::var::var(std::string &&instance)` constructor is called and the string is moved into the `saam::var`
+2. the `saam::var::var(std::string &&instance)` constructor is called
+3. the string is moved into the `saam::var`
 
 If we spell out all the details, this is what really happens here:
 ```cpp
 saam::var<std::string> text(std::move(std::string("Hello world")));
 ```
 
-If it is necessary to create the `std::string` directly inside the `saam::var`, then another constructor is available:
+If it is necessary to create the `std::string` directly in-place in `saam::var`, then another constructor is available:
 ```cpp
 saam::var<std::string> text(std::in_place{}, "Hello world");
 ```
@@ -242,16 +239,19 @@ saam::ref<derived> derived_ref = base_ref.dynamic_down_cast<derived>();
 
 ## Reference management modes
 
-- raw reference
+The following list gives an overview about the reference management styles in C++
+
+- raw C++ reference
   `std::string&`
-- smart reference
+- saam smart reference
   `saam::ref<std::string>`
   - managed mode : the smart reference was created from a smart variable
-   ```c++
-   saam::var<std::string> text{"Hello World"};
-   // The smart variable passes the borrow manager to the smart ref
-   saam::ref<std::string> ref(text);
-   ```
+    ```c++
+    saam::var<std::string> text{"Hello World"};
+    // The smart variable passes the borrow manager to the smart ref
+    saam::ref<std::string> ref(text);
+    ```
+    Managed mode has 3 different operation modes, see the details below.
   - unmanaged mode : the smart reference was created from a raw variable
    ```c++
    std::string text{"Hello World"};
@@ -262,15 +262,15 @@ saam::ref<derived> derived_ref = base_ref.dynamic_down_cast<derived>();
 ### Managed
 In managed mode, a `saam::ref` is created from an associated `saam::var`. The smart variable and reference have a borrow manager that keeps track of the references. With that, it is possible to check if there were dangling references when the `saam::var` was destroyed.
 
-Only one of the managed modes can be active at a time. This is set up when the library is installed.
+Only one of the managed modes can be active at a time. This is set up when the library is installed: see the Conan options.
 
 #### Counted
 The `saam::var` uses atomic reference counting (similar to `std::shared_ptr`) to track outstanding `saam::ref` instances.
 This policy incurs some performance loss when `saam::ref` is copied/moved due to counter management. Accessing the variable through `saam::ref` has no additional cost, similar to using a raw reference.
 
-When a `saam::ref` outlives its associated `saam::var`, a panic is triggered, and the process is aborted. This abortion can be analyzed to find the invalid reference.
+When a `saam::ref` outlives its associated `saam::var`, a panic is triggered.
 
-Define the following function, in order to be able to create a report about the panic.
+Define the following global function, in order to be able to create a report about the panic.
 
 ``` c++
 namespace saam
@@ -285,11 +285,9 @@ void dangling_reference_panic(const std::type_info &var_type, void *var_instance
 This managed mode reliably detects the dangling reference situation, but does not provide info about the dangling reference instances.
 
 #### Tracked
-When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to.
-The fault report includes the call stack where the `saam::var` was destroyed and the creation stack(s) of the dangling `saam::ref` instance(s). This mode requires C++23 with stacktrace support.
+When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to. The fault report includes the call stack where the `saam::var` was destroyed and the creation stack(s) of the dangling `saam::ref` instance(s). This mode requires C++23 with stacktrace support.
 
-Define the following function, in order to be able to create a report about the panic.
-This function is called for each dangling `saam::ref` on the `saam::var` that triggered the panic.
+Define the following function, in order to be able to create a report about the panic. This function is called for each dangling `saam::ref` on the `saam::var` that triggered the panic.
 
 ``` c++
 namespace saam
@@ -305,23 +303,16 @@ void dangling_reference_panic(const std::type_info &var_type,
 }
 ```
 
-This mode stores the creation stacktrace with each reference. This may be a bit too intensive to do for every ref.
-Therefore by default the stack tracing is disabled, and can be enabled for a specific type or only for a specific instance.
-Enabling it for a specific type is usually enough, because in `counted` mode the type that had dangling references is known,
-so we just have to narrow it down to the instance to fix the dangling.
-
-This managed mode gives the most detailed information about the dangling reference situation.
-
 #### Unchecked
 No borrow checking takes place, and the `saam::ref` class behaves like an unmanaged smart reference (see below).
-In this mode, managed smart references (extracted from a `saam::var`) become an unmanaged smart reference.
+In this mode, managed smart references (extracted from a `saam::var`) become unmanaged smart references.
 
 Use this mode for maximum performance to save the cost of the borrow checking when you are confident about the code.
 
 ### Unmanaged
 When a smart reference refers to a raw C++ variable instead of a `saam::var`, then there are no borrow checks performed.
 
-This operation is used mainly for compatibility reasons - see the legacy API section below.
+This style is used mainly for compatibility reasons - see the legacy API section below.
 
 ### Recommended Usage
 
@@ -333,16 +324,12 @@ This operation is used mainly for compatibility reasons - see the legacy API sec
 
 ## Post-constructor and pre-destructor
 
-A `saam::var` decorated instance may have two public functions `void post_constructor(saam::ref<T>)` 
-and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely.
+A `saam::var` decorated instance may have two public functions `void post_constructor(saam::ref<T> self)` 
+and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely. You don't need to derive from any interface, this is done via duck-typing technique.
 
-In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered
-to be usable, because the object is not yet created.
-Therefore if a post-constructor exists, it is called and there the self reference is already available.
-It is ideal place to create callbacks or any other objects, which needs to know the smart reference of the object.
+In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered to be usable, because the object is not yet created. Therefore if a post-constructor exists, there the self reference is already available. It is ideal place to create callbacks or any other objects, which needs to know the smart reference of the object.
 
-The pre-destructor is a called before `saam::var` destroys the wrapped instance. This is a great place
-to put code to revoke outstanding smart references, like cancelling callbacks, etc.
+The pre-destructor is a called before `saam::var` destroys the wrapped instance. This is a great place to put code to revoke outstanding smart references, like cancelling callbacks, etc.
 
 ## Smart `Self` reference
 
@@ -421,7 +408,7 @@ auto generated_text = get_text_length(static_cast<const std::string&>(text.borro
 auto generated_text = get_text_length(*text.borrow());
 ```
 
-Transition from raw reference to the smart reference is also explicit. Note that in such a case - even though smart references are used - there is no way to check reference validity inside the `get_text_length` function.
+Transition from raw reference to the smart reference is also explicit. Note that in such a case - even though smart references are used - there is no way to check reference validity - the reference is unmanaged.
 
 ```cpp
 // The API expects a smart reference
@@ -451,6 +438,34 @@ auto generated_text = get_text_length(unmanaged_text_ref);
 - Garbage collectors encourage overuse of the heap. Allocating and releasing objects on the stack is more efficient than using the heap.
 - Garbage collector references mostly implement ownership, while `saam` implements aliasing aspects.
 - `saam` references are non-owning, so no "circular reference" ownership memory leak is possible with them.
+
+## Cost of saam abstractions
+
+### Unchecked and unmanaged mode
+
+It provides no extra functionality over the raw variable and references, and therefore it has
+zero cost compared to raw references.
+
+There is no additional functionality in this mode, so neither the `saam::var` nor the `saam::ref`
+takes up more space than a raw C++ variable or a raw C++ reference.
+
+### Counted mode
+
+The cost of the counted mode is quite moderate compared to the extra safety it provides.
+
+The `saam::var` contains an atomic integer counter on top of the size of the raw scoped variable. This counter is incremented by each copy of the reference. Moving a reference does not change the reference counter, so it is just the cost of copying the address. Dereferencing costs nothing, because the compiler optimizes away the abstraction to return the address.
+
+`saam::ref` contains a pointer to the owner `saam::var`. Otherwise it contains the address of the referred object, just like the raw reference. From the memory point of view, it contains two pointers instead of one (like a raw reference).
+
+### Tracked mode
+
+This is the most capable and the most expensive abstraction.
+
+The `saam::var` contains a pointer to the owned reference chain (and a mutex) on top of the size of the raw scoped variable. Copy/Move is more expensive than in the counted mode, because the linked list must be modified. Dereferencing costs nothing, for the same reason as for the counted mode.
+
+`saam::ref` contains an std::stack_trace (this is a large object with heap allocations) and
+a pointer to the next ref in the chain and a pointer to the owner `saam::var`.
+Otherwise it contains the address of the referred object, just like the raw reference.
 
 # Concurrency model
 The STL defines concurrency primitives (mutexes, locks, condition variables), but there is no association between these primitives and the resources they protect. `saam` enhances these primitives, just as it does with references.
@@ -609,77 +624,3 @@ class my_class
 For all use cases, the `Owner` itself is just a container, it is not accessed directly.
 All access goes through `Proxy` types.
 
-# Cost of saam abstractions
-
-## Unchecked mode
-
-It provides no extra functionality over the raw variable and references, and therefore it has
-zero cost compared to raw references.
-
-There is no additional functionality in this mode, so neither the `saam::var` nor the `saam::ref`
-takes up more space than a raw scoped variable or a raw reference.
-
-## Counted mode
-
-The cost of the counted mode is quite moderate compared to the extra safety it provides.
-
-The `saam::var` contains an atomic integer counter on top of the size of the raw scoped variable.
-This counter is incremented by each copy of the reference.
-Moving a reference does not change the reference counter, so it is just the cost of copying the address.
-Dereferencing costs nothing, because the compiler optimizes away the abstraction to return the address.
-
-`saam::ref` contains a pointer to the owner `saam::var`. Otherwise it contains the address
-of the referred object, just like the raw reference. From the memory point of view, it contains two pointers
-instead of one (like a raw reference).
-
-## Tracked mode
-
-This is the most capable and the most expensive abstraction.
-
-The `saam::var` contains a pointer to the owned reference chain 
-(and a boolean for enabling the stack tracing) on top of the size of the raw scoped variable.
-Copy/Move is more expensive than in the counted mode, because the linked list must be modified.
-Dereferencing costs nothing, for the same reason as for the counted mode.
-
-`saam::ref` contains an std::stack_trace (this is a large object with heap allocations) and
-a pointer to the next ref in the chain and a pointer to the owner `saam::var`.
-Otherwise it contains the address of the referred object, just like the raw reference.
-
-The overhead of the tracked mode can be reduced by enabling the stack trace collection only
-for a specific type or for a specific instance.
-The default policy is to turn off the stack trace collection.
-
-Enable the stack trace collection for all smart std::string variables.
-```cpp
-saam::var<std::string>::enable_type_stack_tracking(true);
-```
-
-Enable the stack trace collection only for a specific smart std::string variable instance.
-```cpp
-saam::var<std::string> text;
-text.enable_instance_stack_tracking(true);
-```
-
-# Dynamic vs static reference management
-
-The rust borrow checker is a static analysis on the references.
-It aims for two goals:
-- prevent dangling references
-- avoid data races
-
-Sometime the static analysis cannot predict the runtime behavior of the code and it rejects code, that would be otherwise ok.
-The dynamic analysis overcomes this limitation - but for some runtime cost.
-
-The `saam` library solves the two goals (see above) as two separate problems.
-
-Dangling references problem is addressed by the smart variables/references. This infrastructure does not impose any limitations
-on the reference distribution. One can pull as many mutable and immutable references as they wish. At this point we only
-focus to distribute the reference in the system. Accessing the data behind them is not yet a concern.
-
-Data race does not occur when the reference is distributed, but when the reference is accessed. For a single
-threaded application, it is not possible to have a data race - regardless if we have multiple mutable references or not.
-One thread cannot conflict with itself.
-For multithreaded cases, it is important that we can have either multiple immutable access or a single mutable access.
-With the smart mutex this check happens when the protected object is accessed (via locks) and only for the duration of the access.
-For the rust static borrow checker this requirement is enforced for the full lifetime of the reference and not only for
-the moment when it is accessed. That is what makes the static borrow checker in rust so strict.
