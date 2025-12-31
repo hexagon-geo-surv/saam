@@ -325,7 +325,7 @@ This style is used mainly for compatibility reasons - see the legacy API section
 ## Post-constructor and pre-destructor
 
 A `saam::var` decorated instance may have two public functions `void post_constructor(saam::ref<T> self)` 
-and a `void pre_destructor()`. If any or both of these methods present in the decorated class, then `saam::var` is going to call them timely. You don't need to derive from any interface, this is done via duck-typing technique.
+and a `void pre_destructor()`. If any or both of these methods are present in the decorated class, then `saam::var` is going to call them timely. You don't need to derive from any interface, this is done via duck-typing technique.
 
 In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered to be usable, because the object is not yet created. Therefore if a post-constructor exists, there the self reference is already available. It is ideal place to create callbacks or any other objects, which needs to know the smart reference of the object.
 
