@@ -99,6 +99,17 @@ class sentinel
 
     ~sentinel() = default;
 
+    // Equality of sentinels, not the underlying objects --> similar to smart pointers
+    [[nodiscard]] bool operator==(const sentinel &other) const noexcept
+    {
+        return protected_instance_ == other.protected_instance_;
+    }
+
+    [[nodiscard]] bool operator!=(const sentinel &other) const noexcept
+    {
+        return !(*this == other);
+    }
+
     // Arrow operator
     [[nodiscard]] T *operator->() const
     {
@@ -147,6 +158,7 @@ class sentinel
     {
     }
 
+    // track the protected instance via a ref to detect the destruction of the synchronized instance
     saam::ref<T> protected_instance_;
     std::unique_lock<std::shared_mutex> lock_;
 };
@@ -282,6 +294,17 @@ class sentinel<const T>
 
     ~sentinel() = default;
 
+    // Equality of sentinels, not the underlying objects --> similar to smart pointers
+    [[nodiscard]] bool operator==(const sentinel &other) const noexcept
+    {
+        return protected_instance_ == other.protected_instance_;
+    }
+
+    [[nodiscard]] bool operator!=(const sentinel &other) const noexcept
+    {
+        return !(*this == other);
+    }
+
     // Arrow operator
     [[nodiscard]] const T *operator->() const
     {
@@ -305,7 +328,6 @@ class sentinel<const T>
     {
         return static_cast<const T *>(protected_instance_);
     }
-
 
   private:
     template <typename TOther>
@@ -331,6 +353,7 @@ class sentinel<const T>
     {
     }
 
+    // track the protected instance via a ref to detect the destruction of the synchronized instance
     saam::ref<const T> protected_instance_;
     std::shared_lock<std::shared_mutex> lock_;
 };

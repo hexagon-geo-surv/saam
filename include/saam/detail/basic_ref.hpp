@@ -92,7 +92,7 @@ class basic_ref : private TBorrowManager::ref_base
         requires std::is_base_of_v<T, TOther>
     basic_ref<TOther, TBorrowManager> static_down_cast() const;
 
-    // Downcasting to a derived type - without RTTI type checking
+    // Downcasting to a derived type - with RTTI type checking
     // Throws std::bad_cast if the cast is not valid
     template <typename TOther>
         requires std::is_base_of_v<T, TOther>

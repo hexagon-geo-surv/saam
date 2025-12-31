@@ -101,4 +101,20 @@ TEST_F(sentinel_test, move_assignment_mutable)
     ASSERT_EQ(locked_text_move->length(), 11);
 }
 
+TEST_F(sentinel_test, comparison)
+{
+    saam::synchronized<std::string> text("Hello world");
+    saam::synchronized<std::string> text2("Welcome world");
+
+    // Non-const sentinel can be only one at a time, otherwise there is a deadlock
+
+    // Only const (immutable) sentinels can be compared
+    saam::sentinel<const std::string> text1_const_sent(text);
+    saam::sentinel<const std::string> text1_const_sent2(text);
+    saam::sentinel<const std::string> text2_const_sent(text2);
+
+    ASSERT_TRUE(text1_const_sent == text1_const_sent2);
+    ASSERT_TRUE(text1_const_sent != text2_const_sent);
+}
+
 }  // namespace saam::test
