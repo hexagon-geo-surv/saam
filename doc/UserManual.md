@@ -93,7 +93,7 @@ The compiler may detect such trivial situations, but more complex dangling scena
 
 ## Smart References
 
-`saam` improve on raw references with `saam::ref` smart references, just like smart pointers supersede raw pointers.
+`saam` improves on raw references with `saam::ref` smart references, just like smart pointers supersede raw pointers.
 
 <img src="Stack.svg" alt="Stack" style="width:60%;" />
 
