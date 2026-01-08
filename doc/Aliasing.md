@@ -50,6 +50,12 @@ auto size = name.borrow()->size();
 *name.borrow() = "Welcome";
 ```
 
+The API offers a shortcut for the `operator->`. It looks like that the size is called directly on the var, but in the background a temporary reference is created.
+C++ reursively applies the `operator->` until a raw pointer type is reached. This option is not possible for the dereferencing operator (`operator*`)
+```cpp
+auto size = name->size();
+```
+
 Advantages of smart references over raw references:
 - `saam` can detect dangling reference situations
 - `saam::ref` a reference is always bound to an object and this binding is never a dangling one!
@@ -133,7 +139,7 @@ saam::var<std::string> text(std::move(std::string("Hello world")));
 
 If it is necessary to create the `std::string` directly in-place in `saam::var`, then another constructor is available:
 ```cpp
-saam::var<std::string> text(std::in_place{}, "Hello world");
+saam::var<std::string> text(std::in_place, "Hello world");
 ```
 This is also the way to go when the `saam::var` wrapped type has multiple constructor parameters. This is similar to the `std::optional` creation schemes.
 
