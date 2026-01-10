@@ -51,7 +51,7 @@ The `synchronized` instance and its related `sentinel` instances are bound via s
 int swap_number(int new_number)
 {
     std::lock_guard lock(mutex_);
-    return number_
+    return number_;
 }
 ```
 
