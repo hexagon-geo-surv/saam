@@ -210,7 +210,7 @@ class tracked_borrow_manager
     }
 
     template <typename TOther, borrow_manager TOtherBorrowManager>
-    friend class basic_var;
+    friend class var;
 
     mutable std::mutex mutex_;
     ref_base *ref_chain_root_ = nullptr;

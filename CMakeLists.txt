@@ -35,7 +35,7 @@ set (GENERATED_INCLUDE_DIR ${GENERATED_INCLUDE_STEM}/${PROJECT_NAME})
 file(MAKE_DIRECTORY ${GENERATED_INCLUDE_STEM})
 
 configure_file(${PRJ_INCLUDE_DIR}/version.hpp.in ${GENERATED_INCLUDE_DIR}/version.hpp)
-configure_file(${PRJ_INCLUDE_DIR}/safe_ref.hpp.in ${GENERATED_INCLUDE_DIR}/safe_ref.hpp)
+configure_file(${PRJ_INCLUDE_DIR}/detail/default_borrow_manager.hpp.in ${GENERATED_INCLUDE_DIR}/detail/default_borrow_manager.hpp)
 
 file(GLOB_RECURSE API_HEADERS ${PRJ_INCLUDE_DIR}/*.hpp ${PRJ_INCLUDE_DIR}/*.ipp)
 file(GLOB_RECURSE GENERATED_API_HEADERS ${GENERATED_INCLUDE_DIR}/*.hpp)
