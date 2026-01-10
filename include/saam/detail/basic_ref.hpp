@@ -18,6 +18,9 @@ template <typename T, borrow_manager TBorrowManager>
 class basic_ref : private TBorrowManager::ref_base
 {
   public:
+    using type_t = T;
+    using borrow_manager_t = TBorrowManager;
+
     // Unmanaged reference constructor
     basic_ref(T &instance);
 
@@ -110,5 +113,12 @@ class basic_ref : private TBorrowManager::ref_base
 
     T *instance_ = nullptr;
 };
+
+// Deduction guide
+template <typename T, borrow_manager TBorrowManager>
+basic_ref(basic_var<T, TBorrowManager>) -> basic_ref<T, TBorrowManager>;
+
+template <typename T, borrow_manager TBorrowManager>
+basic_ref(basic_ref<T, TBorrowManager>) -> basic_ref<T, TBorrowManager>;
 
 }  // namespace saam

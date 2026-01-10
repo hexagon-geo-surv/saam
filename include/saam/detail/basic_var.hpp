@@ -16,6 +16,9 @@ template <typename T, borrow_manager TBorrowManager>
 class basic_var
 {
   public:
+    using type_t = T;
+    using borrow_manager_t = TBorrowManager;
+
     basic_var();
 
     // In-place construction of the underlying type
@@ -52,7 +55,6 @@ class basic_var
 
     // Borrowing is a const operation, because borrowing just provides access to the underlying object - does not change the manager
     [[nodiscard]] basic_ref<T, TBorrowManager> borrow() const noexcept;
-    [[nodiscard]] operator basic_ref<T, TBorrowManager>() const noexcept;
 
     // During the access to the undelying object, there must be a temporary smart reference. The lifetime of the temporary smart reference
     // starts before the operator-> is called and ends well after the call is completed. Without this, we use the underlying object without

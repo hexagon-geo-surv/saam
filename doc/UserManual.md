@@ -65,5 +65,4 @@ Sweeping through the container shall be done by iterator chains (std::ranges).
 | Scoped object | saam::var | saam::ref | released with object |
 | Synchronized object | saam::synchronized | saam::sentinel | released with object |
 
-For all use cases, the `Owner` itself is just a container, it is not accessed directly.
-All access goes through `Proxy` types.
+For all use cases, the `Owner` itself is just a container, it is not accessed directly. All access go through `Proxy` types.

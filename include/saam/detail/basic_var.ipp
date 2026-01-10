@@ -160,12 +160,6 @@ basic_ref<T, TBorrowManager> basic_var<T, TBorrowManager>::borrow() const noexce
 }
 
 template <typename T, borrow_manager TBorrowManager>
-basic_var<T, TBorrowManager>::operator basic_ref<T, TBorrowManager>() const noexcept
-{
-    return borrow();
-}
-
-template <typename T, borrow_manager TBorrowManager>
 basic_ref<T, TBorrowManager> basic_var<T, TBorrowManager>::operator->() const noexcept
 {
     return borrow();
