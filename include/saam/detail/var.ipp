@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <saam/detail/basic_var.hpp>
+#include <saam/detail/var.hpp>
 #include <saam/detail/constructor_destructor_traits.hpp>
 #include <saam/detail/unchecked_borrow_manager.hpp>
 
@@ -53,6 +53,17 @@ var<T, TBorrowManager>::var(const var &other) :
 }
 
 template <typename T, borrow_manager TBorrowManager>
+template <borrow_manager TOtherBorrowManager>
+var<T, TBorrowManager>::var(const var<T, TOtherBorrowManager> &other) :
+    // Always use the saam::var through a reference, so that the reference management can ensure existence of the underlying object
+    // Foward the call to the underlying type's copy constructor
+    var(*other.borrow())
+{
+    // The post_constructor needs to be called, because the smart self reference has changed for the object
+    call_post_constructor();
+}
+
+template <typename T, borrow_manager TBorrowManager>
 var<T, TBorrowManager>::var(const ref<T, TBorrowManager> &other) :
     // The other instance is guaranteed to be valid, because if is a reference
     // Foward the call to the underlying type's copy constructor
@@ -63,7 +74,29 @@ var<T, TBorrowManager>::var(const ref<T, TBorrowManager> &other) :
 }
 
 template <typename T, borrow_manager TBorrowManager>
-var<T, TBorrowManager>::var(var &&other) noexcept :
+template <borrow_manager TOtherBorrowManager>
+var<T, TBorrowManager>::var(const ref<T, TOtherBorrowManager> &other) :
+    // The other instance is guaranteed to be valid, because if is a reference
+    // Foward the call to the underlying type's copy constructor
+    var(*other)
+{
+    // The post_constructor needs to be called, because the smart self reference has changed for the object
+    call_post_constructor();
+}
+
+template <typename T, borrow_manager TBorrowManager>
+var<T, TBorrowManager>::var(var<T, TBorrowManager> &&other) noexcept :
+    // Always use the saam::var through a reference, so that the reference management can ensure existence of the underlying object
+    // Foward the call to the underlying type's move constructor
+    var(std::move(*other.borrow()))
+{
+    // The post_constructor needs to be called, because the smart self reference has changed for the object
+    call_post_constructor();
+}
+
+template <typename T, borrow_manager TBorrowManager>
+template <borrow_manager TOtherBorrowManager>
+var<T, TBorrowManager>::var(var<T, TOtherBorrowManager> &&other) noexcept :
     // Always use the saam::var through a reference, so that the reference management can ensure existence of the underlying object
     // Foward the call to the underlying type's move constructor
     var(std::move(*other.borrow()))
@@ -74,6 +107,14 @@ var<T, TBorrowManager>::var(var &&other) noexcept :
 
 template <typename T, borrow_manager TBorrowManager>
 var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(const var &other) noexcept
+{
+    // During the assignment, the other instance must be borrowed to ensure proper reference management
+    return operator=(other.borrow());
+}
+
+template <typename T, borrow_manager TBorrowManager>
+template <borrow_manager TOtherBorrowManager>
+var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(const var<T, TOtherBorrowManager> &other) noexcept
 {
     // During the assignment, the other instance must be borrowed to ensure proper reference management
     return operator=(other.borrow());
@@ -93,9 +134,38 @@ var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(const ref<T, TBorrowMa
 }
 
 template <typename T, borrow_manager TBorrowManager>
-var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(var &&other) noexcept
+template <borrow_manager TOtherBorrowManager>
+var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(const ref<T, TOtherBorrowManager> &other) noexcept
+{
+    if (&instance_ == other.instance_)
+    {
+        return *this;
+    }
+
+    // Only the instance shall be assigned, reference management of "this" and "other" are independent
+    instance_ = *other.instance_;
+    return *this;
+}
+
+template <typename T, borrow_manager TBorrowManager>
+var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(var<T, TBorrowManager> &&other) noexcept
 {
     ref<T, TBorrowManager> other_borrow = other.borrow();
+    if (&instance_ == other_borrow.instance_)
+    {
+        return *this;
+    }
+
+    // Only the instance shall be assigned, reference management of "this" and "other" are independent
+    instance_ = std::move(*other_borrow.instance_);
+    return *this;
+}
+
+template <typename T, borrow_manager TBorrowManager>
+template <borrow_manager TOtherBorrowManager>
+var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(var<T, TOtherBorrowManager> &&other) noexcept
+{
+    ref<T, TOtherBorrowManager> other_borrow = other.borrow();
     if (&instance_ == other_borrow.instance_)
     {
         return *this;

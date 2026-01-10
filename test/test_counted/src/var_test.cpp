@@ -60,6 +60,34 @@ TEST(counted_var_test, var_underlying_type_emplacement)
     ASSERT_EQ(text->length(), 5);
 }
 
+TEST(counted_var_test, copy_construct_var)
+{
+    saam::var<std::string> text("Hello world");
+    saam::var<std::string> text2(text);
+    ASSERT_TRUE(text2 == "Hello world");
+}
+
+TEST(counted_var_test, copy_construct_var_with_different_borrow_manager)
+{
+    saam::var<std::string, counted_borrow_manager> text("Hello world");
+    saam::var<std::string, unchecked_borrow_manager> text2(text);
+    ASSERT_TRUE(text2 == "Hello world");
+}
+
+TEST(counted_var_test, copy_construct_var_from_ref)
+{
+    saam::var<std::string> text("Hello world");
+    saam::var<std::string> text2(text.borrow());
+    ASSERT_TRUE(text2 == "Hello world");
+}
+
+TEST(counted_var_test, copy_construct_var_from_ref_with_different_borrow_manager)
+{
+    saam::var<std::string, counted_borrow_manager> text("Hello world");
+    saam::var<std::string, unchecked_borrow_manager> text2(text.borrow());
+    ASSERT_TRUE(text2 == "Hello world");
+}
+
 TEST(counted_var_test, compare_var_with_underlying_type)
 {
     saam::var<std::string> text("Hello world");
@@ -76,10 +104,28 @@ TEST(counted_var_test, var_copy_assignment)
     ASSERT_EQ(text2, "Hello world");
 }
 
+TEST(counted_var_test, var_copy_assignment_with_different_borrow_manager)
+{
+    saam::var<std::string, counted_borrow_manager> text("Hello world");
+    saam::var<std::string, unchecked_borrow_manager> text2("Welcome");
+    text2 = text;
+    ASSERT_EQ(text, "Hello world");
+    ASSERT_EQ(text2, "Hello world");
+}
+
 TEST(counted_var_test, var_move_assignment)
 {
     saam::var<std::string> text("Hello world");
     saam::var<std::string> text2("Welcome");
+    text2 = std::move(text);
+    ASSERT_TRUE(text->empty());
+    ASSERT_EQ(text2, "Hello world");
+}
+
+TEST(counted_var_test, var_move_assignment_with_different_borrow_manager)
+{
+    saam::var<std::string, counted_borrow_manager> text("Hello world");
+    saam::var<std::string, unchecked_borrow_manager> text2("Welcome");
     text2 = std::move(text);
     ASSERT_TRUE(text->empty());
     ASSERT_EQ(text2, "Hello world");

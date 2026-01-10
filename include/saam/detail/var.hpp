@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <saam/detail/basic_ref.hpp>
+#include <saam/detail/ref.hpp>
 #include <saam/detail/borrow_manager_traits.hpp>
 #include <saam/detail/default_borrow_manager.hpp>
 
@@ -32,19 +32,33 @@ class var
 
     // No conversion copy constructor, because of the slicing of T - only the base class would be copied
     var(const var &other);
+    template <borrow_manager TOtherBorrowManager>
+    var(const var<T, TOtherBorrowManager> &other);
+
     var(const ref<T, TBorrowManager> &other);
+    template <borrow_manager TOtherBorrowManager>
+    var(const ref<T, TOtherBorrowManager> &other);
 
     // No conversion move constructor, because of the slicing of T - only the base class would be copied
-    var(var &&other) noexcept;
+    var(var<T, TBorrowManager> &&other) noexcept;
+    template <borrow_manager TOtherBorrowManager>
+    var(var<T, TOtherBorrowManager> &&other) noexcept;
     // Makes no sense, as we do not extract anything from a rvalue ref, so we can always use the copy version of this function
     // var(ref<T, TBorrowManager> &&other) noexcept;
 
     // No conversion copy assignment, because of the slicing of T - only the base class would be copied
     var &operator=(const var &other) noexcept;
+    template <borrow_manager TOtherBorrowManager>
+    var &operator=(const var<T, TOtherBorrowManager> &other) noexcept;
+
     var &operator=(const ref<T, TBorrowManager> &other) noexcept;
+    template <borrow_manager TOtherBorrowManager>
+    var &operator=(const ref<T, TOtherBorrowManager> &other) noexcept;
 
     // No conversion move assignment, because of the slicing of T - only the base class would be copied
     var &operator=(var &&other) noexcept;
+    template <borrow_manager TOtherBorrowManager>
+    var &operator=(var<T, TOtherBorrowManager> &&other) noexcept;
     // Makes no sense, as we do not extract anything from a rvalue ref, so we can always use the copy version of this function
     // var &operator=(ref<T, TBorrowManager> &&other) noexcept;
 

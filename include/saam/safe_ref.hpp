@@ -4,5 +4,5 @@
 
 #pragma once
 
-#include <saam/detail/basic_ref.ipp>
-#include <saam/detail/basic_var.ipp>
+#include <saam/detail/ref.ipp>
+#include <saam/detail/var.ipp>
