@@ -12,10 +12,10 @@ namespace saam
 {
 
 template <typename T, borrow_manager TBorrowManager>
-class basic_ref;
+class ref;
 
 template <typename T, typename TBorrowManager>
-concept has_post_constructor = requires(T t, TBorrowManager borrow_mgr, saam::basic_ref<T, TBorrowManager> t_ref) {
+concept has_post_constructor = requires(T t, TBorrowManager borrow_mgr, saam::ref<T, TBorrowManager> t_ref) {
     { t.post_constructor(t_ref) } -> std::same_as<void>;
 };
 

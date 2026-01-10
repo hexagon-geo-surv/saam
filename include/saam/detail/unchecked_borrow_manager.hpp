@@ -54,7 +54,7 @@ class unchecked_borrow_manager
     unchecked_borrow_manager() = default;
 
     template <typename TOther, borrow_manager TOtherBorrowManager>
-    friend class basic_var;
+    friend class var;
 };
 
 }  // namespace saam

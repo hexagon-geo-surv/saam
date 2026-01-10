@@ -167,7 +167,7 @@ class counted_borrow_manager
     }
 
     template <typename TOther, borrow_manager TOtherBorrowManager>
-    friend class basic_var;
+    friend class var;
 
     // maxint the counter was closed, no more borrows are allowed
     // 0 counter means that the instance is not borrowed
