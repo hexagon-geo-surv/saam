@@ -51,7 +51,7 @@ auto size = name.borrow()->size();
 ```
 
 The API offers a shortcut for the `operator->`. It looks like that the size is called directly on the `saam::var`, but in the background a temporary reference is created.
-C++ reursively applies the `operator->` until a raw pointer type is reached. This option is not possible for the dereferencing operator (`operator*`)
+C++ recursively applies the `operator->` until a raw pointer type is reached. This option is not possible for the dereferencing operator (`operator*`)
 ```cpp
 auto size = name->size();
 ```
