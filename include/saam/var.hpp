@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <saam/detail/ref.hpp>
 #include <saam/detail/borrow_manager_traits.hpp>
 #include <saam/detail/default_borrow_manager.hpp>
 
@@ -12,6 +11,9 @@
 
 namespace saam
 {
+
+template <typename TOther, borrow_manager TOtherBorrowManager>
+class ref;
 
 template <typename T, borrow_manager TBorrowManager = default_borrow_manager_t>
 class var
@@ -109,3 +111,5 @@ class var
 };
 
 }  // namespace saam
+
+#include <saam/detail/var.ipp>

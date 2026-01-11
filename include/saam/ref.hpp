@@ -123,3 +123,5 @@ template <typename T, borrow_manager TBorrowManager>
 ref(ref<T, TBorrowManager>) -> ref<T, TBorrowManager>;
 
 }  // namespace saam
+
+#include <saam/detail/ref.ipp>

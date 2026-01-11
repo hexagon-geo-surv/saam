@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include <saam/detail/var.hpp>
+#include <saam/var.hpp>
+#include <saam/ref.hpp>
 #include <saam/detail/constructor_destructor_traits.hpp>
 #include <saam/detail/unchecked_borrow_manager.hpp>
 

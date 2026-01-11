@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <saam/detail/ref.hpp>
-#include <saam/detail/var.hpp>
+#include <saam/ref.hpp>
+#include <saam/var.hpp>
 
 #include <type_traits>
 
