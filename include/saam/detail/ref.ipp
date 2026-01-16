@@ -135,6 +135,12 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const var<TOther, TBor
 }
 
 template <typename T, borrow_manager TBorrowManager>
+[[nodiscard]] bool ref<T, TBorrowManager>::is_moved_from() const noexcept
+{
+    return instance_ == nullptr;
+}
+
+template <typename T, borrow_manager TBorrowManager>
 bool ref<T, TBorrowManager>::operator==(const ref &other) const noexcept
 {
     return instance_ == other.instance_;
