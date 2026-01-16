@@ -32,8 +32,8 @@ TEST(condition_test, wait_on_condition)
     });
 
     {
-        auto sentinel = synced_m.lock();
-        value_changed.wait(sentinel, [](int val) { return val > 5; }, {std::chrono::milliseconds(100)});
+        auto sentinel = synced_m.lock_mut();
+        value_changed.wait(sentinel, [](const int &val) { return val > 5; }, {std::chrono::milliseconds(100)});
         ASSERT_GT(*sentinel, 5);
     }
 

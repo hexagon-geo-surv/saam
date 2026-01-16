@@ -5,9 +5,7 @@
 #pragma once
 
 #include <saam/safe_ref.hpp>
-
-#include <mutex>
-#include <shared_mutex>
+#include <saam/shared_recursive_mutex.hpp>
 
 namespace saam
 {
@@ -31,11 +29,7 @@ class sentinel
     // Conversion move constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, T *>
-    sentinel(sentinel<TOther> &&other) noexcept :
-        protected_instance_(std::move(other.protected_instance_)),
-        lock_(std::move(other.lock_))
-    {
-    }
+    sentinel(sentinel<TOther> &&other) noexcept;
 
     // No conversion upgrade (immutable to mutable) move constructor.
     template <typename TOther>
@@ -43,11 +37,7 @@ class sentinel
     sentinel(sentinel<const TOther> &&other) noexcept = delete;
 
     // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
-    sentinel(sentinel<T> &&other) noexcept :
-        protected_instance_(std::move(other.protected_instance_)),
-        lock_(std::move(other.lock_))
-    {
-    }
+    sentinel(sentinel<T> &&other) noexcept;
 
     // No upgrade (immutable to mutable) move constructor.
     sentinel(sentinel<const T> &&other) noexcept = delete;
@@ -63,31 +53,14 @@ class sentinel
     // Conversion move assignment operator from sentinel
     template <typename TOther>
         requires std::is_convertible_v<TOther *, T *>
-    sentinel &operator=(sentinel<TOther> &&other) noexcept
-    {
-        protected_instance_ = std::move(other.protected_instance_);
-        lock_ = std::move(other.lock_);
-
-        return *this;
-    }
+    sentinel &operator=(sentinel<TOther> &&other) noexcept;
 
     // No conversion upgrade (immutable to mutable) move assignment.
     template <typename TOther>
         requires std::is_convertible_v<TOther *, T *>
     sentinel &operator=(sentinel<const TOther> &&other) noexcept = delete;
 
-    sentinel &operator=(sentinel<T> &&other) noexcept
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        protected_instance_ = std::move(other.protected_instance_);
-        lock_ = std::move(other.lock_);
-
-        return *this;
-    }
+    sentinel &operator=(sentinel<T> &&other) noexcept;
 
     // No upgrade (immutable to mutable) move assignment.
     sentinel &operator=(sentinel<const T> &&other) noexcept = delete;
@@ -97,42 +70,23 @@ class sentinel
         requires std::is_convertible_v<TOther *, T *>
     sentinel &operator=(const synchronized<TOther> &other) noexcept;
 
-    ~sentinel() = default;
+    ~sentinel();
 
     // Equality of sentinels, not the underlying objects --> similar to smart pointers
-    [[nodiscard]] bool operator==(const sentinel &other) const noexcept
-    {
-        return protected_instance_ == other.protected_instance_;
-    }
-
-    [[nodiscard]] bool operator!=(const sentinel &other) const noexcept
-    {
-        return !(*this == other);
-    }
+    [[nodiscard]] bool operator==(const sentinel &other) const noexcept;
+    [[nodiscard]] bool operator!=(const sentinel &other) const noexcept;
 
     // Arrow operator
-    [[nodiscard]] T *operator->() const
-    {
-        return protected_instance_.operator->();
-    }
+    [[nodiscard]] T *operator->() const;
 
     // Dereference operator
-    [[nodiscard]] T &operator*() const
-    {
-        return *protected_instance_;
-    }
+    [[nodiscard]] T &operator*() const;
 
     // Cast to T reference
-    [[nodiscard]] explicit operator T &() const noexcept
-    {
-        return *protected_instance_;
-    }
+    [[nodiscard]] explicit operator T &() const noexcept;
 
     // Cast to T pointer
-    [[nodiscard]] explicit operator T *() const noexcept
-    {
-        return static_cast<T *>(protected_instance_);
-    }
+    [[nodiscard]] explicit operator T *() const noexcept;
 
   private:
     template <typename TOther>
@@ -144,23 +98,9 @@ class sentinel
 
     friend class condition;
 
-    void unlock()
-    {
-        if (lock_.owns_lock())
-        {
-            lock_.unlock();
-        }
-    }
-
-    sentinel(saam::ref<T> instance, std::unique_lock<std::shared_mutex> lock) :
-        protected_instance_(std::move(instance)),
-        lock_(std::move(lock))
-    {
-    }
-
     // track the protected instance via a ref to detect the destruction of the synchronized instance
-    saam::ref<T> protected_instance_;
-    std::unique_lock<std::shared_mutex> lock_;
+    ref<T> protected_instance_;
+    ref<shared_recursive_mutex> mutex_;
 };
 
 // The underlying lock is a shared lock for const access, so a separate implementation is needed.
@@ -173,11 +113,7 @@ class sentinel<const T>
     // Conversion copy constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
-    sentinel(const sentinel<const TOther> &other) noexcept :
-        protected_instance_(other.protected_instance_),
-        lock_(other.shared_lock_)
-    {
-    }
+    sentinel(const sentinel<const TOther> &other) noexcept;
 
     // No conversion downgrade (mutable to immutable) copy constructor.
     template <typename TOther>
@@ -185,11 +121,7 @@ class sentinel<const T>
     sentinel(const sentinel<TOther> &other) noexcept = delete;
 
     // The conversion copy constructor does not cover the copy constructor, so we need to implement it explicitly
-    sentinel(const sentinel<const T> &other) :
-        protected_instance_(other.protected_instance_),
-        lock_(*other.lock_.mutex())
-    {
-    }
+    sentinel(const sentinel<const T> &other) noexcept;
 
     // No downgrade (mutable to immutable) copy constructor.
     sentinel(const sentinel<T> &other) noexcept = delete;
@@ -197,11 +129,7 @@ class sentinel<const T>
     // Conversion move constructor
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
-    sentinel(sentinel<const TOther> &&other) noexcept :
-        protected_instance_(std::move(other.protected_instance_)),
-        lock_(std::move(other.shared_lock_))
-    {
-    }
+    sentinel(sentinel<const TOther> &&other) noexcept;
 
     // No conversion downgrade (mutable to immutable) move constructor.
     template <typename TOther>
@@ -209,11 +137,7 @@ class sentinel<const T>
     sentinel(sentinel<TOther> &&other) noexcept = delete;
 
     // The conversion move constructor does not cover the move constructor, so we need to implement it explicitly
-    sentinel(sentinel<const T> &&other) noexcept :
-        protected_instance_(std::move(other.protected_instance_)),
-        lock_(std::move(other.lock_))
-    {
-    }
+    sentinel(sentinel<const T> &&other) noexcept;
 
     // No downgrade (mutable to immutable) move constructor.
     sentinel(sentinel<T> &&other) noexcept = delete;
@@ -226,31 +150,14 @@ class sentinel<const T>
     // Conversion copy assignment operator from sentinel
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
-    sentinel &operator=(const sentinel<const TOther> &other)
-    {
-        protected_instance_ = other.protected_instance_;
-        lock_ = other.shared_lock_;
-
-        return *this;
-    }
+    sentinel &operator=(const sentinel<const TOther> &other);
 
     // No conversion downgrade (mutable to immutable) copy assignment.
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
     sentinel &operator=(const sentinel<TOther> &other) = delete;
 
-    sentinel &operator=(const sentinel<const T> &other)
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        protected_instance_ = other.protected_instance_;
-        lock_ = std::shared_lock(*other.lock_.mutex());
-
-        return *this;
-    }
+    sentinel &operator=(const sentinel<const T> &other);
 
     // No downgrade (mutable to immutable) copy assignment.
     sentinel &operator=(const sentinel<T> &other) = delete;
@@ -258,31 +165,14 @@ class sentinel<const T>
     // Conversion move assignment operator from sentinel
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
-    sentinel &operator=(sentinel<const TOther> &&other) noexcept
-    {
-        protected_instance_ = std::move(other.protected_instance_);
-        lock_ = std::move(other.shared_lock_);
-
-        return *this;
-    }
+    sentinel &operator=(sentinel<const TOther> &&other) noexcept;
 
     // No conversion downgrade (mutable to immutable) move assignment.
     template <typename TOther>
         requires std::is_convertible_v<TOther *, const T *>
     sentinel &operator=(sentinel<TOther> &&other) noexcept = delete;
 
-    sentinel &operator=(sentinel<const T> &&other) noexcept
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        protected_instance_ = std::move(other.protected_instance_);
-        lock_ = std::move(other.lock_);
-
-        return *this;
-    }
+    sentinel &operator=(sentinel<const T> &&other) noexcept;
 
     // No downgrade (mutable to immutable) move assignment.
     sentinel &operator=(sentinel<T> &&other) noexcept = delete;
@@ -292,42 +182,24 @@ class sentinel<const T>
         requires std::is_convertible_v<TOther *, const T *>
     sentinel &operator=(const synchronized<TOther> &other) noexcept;
 
-    ~sentinel() = default;
+    ~sentinel();
 
     // Equality of sentinels, not the underlying objects --> similar to smart pointers
-    [[nodiscard]] bool operator==(const sentinel &other) const noexcept
-    {
-        return protected_instance_ == other.protected_instance_;
-    }
+    [[nodiscard]] bool operator==(const sentinel &other) const noexcept;
 
-    [[nodiscard]] bool operator!=(const sentinel &other) const noexcept
-    {
-        return !(*this == other);
-    }
+    [[nodiscard]] bool operator!=(const sentinel &other) const noexcept;
 
     // Arrow operator
-    [[nodiscard]] const T *operator->() const
-    {
-        return protected_instance_.operator->();
-    }
+    [[nodiscard]] const T *operator->() const;
 
     // Dereference operator
-    [[nodiscard]] const T &operator*() const
-    {
-        return *protected_instance_;
-    }
+    [[nodiscard]] const T &operator*() const;
 
     // Cast to T reference
-    [[nodiscard]] explicit operator const T &() const noexcept
-    {
-        return *protected_instance_;
-    }
+    [[nodiscard]] explicit operator const T &() const noexcept;
 
     // Cast to T pointer
-    [[nodiscard]] explicit operator const T *() const noexcept
-    {
-        return static_cast<const T *>(protected_instance_);
-    }
+    [[nodiscard]] explicit operator const T *() const noexcept;
 
   private:
     template <typename TOther>
@@ -339,23 +211,11 @@ class sentinel<const T>
 
     friend class condition;
 
-    void unlock()
-    {
-        if (lock_.owns_lock())
-        {
-            lock_.unlock();
-        }
-    }
-
-    sentinel(saam::ref<const T> instance, std::shared_lock<std::shared_mutex> lock) :
-        protected_instance_(std::move(instance)),
-        lock_(std::move(lock))
-    {
-    }
-
     // track the protected instance via a ref to detect the destruction of the synchronized instance
-    saam::ref<const T> protected_instance_;
-    std::shared_lock<std::shared_mutex> lock_;
+    ref<T> protected_instance_;
+    ref<shared_recursive_mutex> mutex_;
 };
 
 }  // namespace saam
+
+#include <saam/detail/sentinel.ipp>

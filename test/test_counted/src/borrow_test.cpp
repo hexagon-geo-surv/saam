@@ -119,6 +119,7 @@ TEST(counted_borrow_test, borrow_move_copy_same_instance_assignment)
 
     textref2 = std::move(textref1);
     ASSERT_EQ(textref2->at(0), 'H');
+    ASSERT_TRUE(textref1.is_moved_from());
 }
 
 TEST(counted_borrow_test, moving_instance)

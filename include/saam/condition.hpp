@@ -37,33 +37,64 @@ class condition
     };
 
     template <typename T, typename Clock = std::chrono::system_clock, typename Duration = std::chrono::milliseconds>
+        requires(!std::is_const_v<T>)
     wait_result wait(
         sentinel<T> &sentinel,
         const std::function<bool(const typename std::remove_reference_t<decltype(sentinel)>::value_t &)> &exit_criteria,
         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<Clock, Duration>>> maybe_timeout = std::nullopt)
     {
+        assert(!sentinel.mutex_.is_moved_from());
         // Ensure that the condition is related to the sentinel
         assert(sentinel.protected_instance_ == *std::any_cast<saam::ref<std::remove_cv_t<T>>>(&protected_instance_));
 
-        auto waiting_predicate = [&sentinel, &exit_criteria]() { return exit_criteria(*sentinel); };
+        auto internal_mutex_lock{sentinel.mutex_->acquire_internal_mutex()};
+
+        // Can't go sleep with holding the lock count, otherwise others cannot change the state of the synchronized instance
+        (void)sentinel.mutex_->unregister_unique_count();
+        // Do not notify yet the threads that are waiting to acquire a senrinel.
+        // Delay it until the waiting predicate is called the first time.
+
+        const auto waiting_predicate = [&internal_mutex_lock, &sentinel, &exit_criteria]() {
+            sentinel.mutex_->register_unique_count(internal_mutex_lock);
+            const bool criteria_met = exit_criteria(*sentinel);
+            if (!criteria_met)
+            {
+                auto no_lock_counts = sentinel.mutex_->unregister_unique_count();
+                if (no_lock_counts)
+                {
+                    // Even though the internal mutex is still locked here, this is the last change for the notification
+                    // before going to sleep.
+                    sentinel.mutex_->notify_mutex_free_condition(true);
+                }
+            }
+            return criteria_met;
+        };
+
+        wait_result result;
 
         if (!maybe_timeout.has_value())
         {
-            condition_variable_.wait(sentinel.lock_, waiting_predicate);
-            return wait_result::criteria_met;
+            condition_variable_.wait(internal_mutex_lock, waiting_predicate);
+            result = wait_result::criteria_met;
         }
-
-        auto &timeout = maybe_timeout.value();
-        if (std::holds_alternative<std::chrono::milliseconds>(timeout))
+        else
         {
-            const bool criteria_met =
-                condition_variable_.wait_for(sentinel.lock_, std::get<std::chrono::milliseconds>(timeout), waiting_predicate);
-            return criteria_met ? wait_result::criteria_met : wait_result::timeout;
+            auto &timeout = maybe_timeout.value();
+            if (std::holds_alternative<std::chrono::milliseconds>(timeout))
+            {
+                const bool criteria_met =
+                    condition_variable_.wait_for(internal_mutex_lock, std::get<std::chrono::milliseconds>(timeout), waiting_predicate);
+                result = criteria_met ? wait_result::criteria_met : wait_result::timeout;
+            }
+            else
+            {
+                const bool criteria_met = condition_variable_.wait_until(
+                    internal_mutex_lock, std::get<std::chrono::time_point<Clock, Duration>>(timeout), waiting_predicate);
+                result = criteria_met ? wait_result::criteria_met : wait_result::timeout;
+            }
         }
 
-        const bool criteria_met =
-            condition_variable_.wait_until(sentinel.lock_, std::get<std::chrono::time_point<Clock, Duration>>(timeout), waiting_predicate);
-        return criteria_met ? wait_result::criteria_met : wait_result::timeout;
+        return result;
     }
 
     enum class notification_scope : std::uint8_t
@@ -86,7 +117,7 @@ class condition
 
   private:
     std::any protected_instance_;  // Hold a type-erased reference to the synchronized instance
-    std::condition_variable_any condition_variable_;
+    std::condition_variable condition_variable_;
 };
 
 }  // namespace saam
