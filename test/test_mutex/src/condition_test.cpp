@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <saam/condition.hpp>
 #include <saam/synchronized.hpp>
 
 #include <gmock/gmock.h>
@@ -14,9 +13,10 @@ namespace saam::test
 {
 
 TEST(condition_test, wait_on_condition)
+
 {
     saam::synchronized<int> synced_m(5);
-    saam::condition value_changed(synced_m);
+    saam::synchronized<int>::condition above_5_condition(synced_m, [](const int &val) { return val > 5; });
     bool stop_thread = false;
 
     std::thread thread_worker([&]() {
@@ -26,14 +26,14 @@ TEST(condition_test, wait_on_condition)
                 auto locked_m = synced_m.lock_mut();
                 (*locked_m)++;
             }
-            value_changed.notify();
+            above_5_condition.notify_all();
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     });
 
     {
-        auto sentinel = synced_m.lock_mut();
-        value_changed.wait(sentinel, [](const int &val) { return val > 5; }, {std::chrono::milliseconds(100)});
+        auto sentinel = synced_m.lock();
+        above_5_condition.wait(sentinel);
         ASSERT_GT(*sentinel, 5);
     }
 

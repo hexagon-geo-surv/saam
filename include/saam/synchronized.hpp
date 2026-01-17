@@ -8,8 +8,13 @@
 #include <saam/sentinel.hpp>
 #include <saam/shared_recursive_mutex.hpp>
 
+#include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <optional>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace saam
 {
@@ -21,6 +26,36 @@ template <typename T>
 class synchronized
 {
   public:
+    class condition
+    {
+      public:
+        condition(const synchronized &synched, std::function<bool(const T &)> fulfillment_criteria);
+
+        enum class wait_result : std::uint8_t
+        {
+            criteria_met,
+            timeout
+        };
+
+        template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
+        wait_result wait(sentinel<T> &sentinel,
+                         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
+                             std::nullopt);
+
+        template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
+        wait_result wait(sentinel<const T> &sentinel,
+                         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
+                             std::nullopt);
+
+        void notify_one();
+        void notify_all();
+
+      private:
+        saam::ref<T> protected_instance_;
+        std::condition_variable condition_variable_;
+        std::function<bool(const T &)> fulfillment_criteria_;
+    };
+
     synchronized();
 
     template <typename... Args>
@@ -69,8 +104,6 @@ class synchronized
 
     template <typename TOther>
     friend class sentinel;
-
-    friend class condition;
 
     var<shared_recursive_mutex> mutex_;
     ref<shared_recursive_mutex> active_mutex_{mutex_};

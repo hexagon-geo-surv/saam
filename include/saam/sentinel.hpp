@@ -96,8 +96,7 @@ class sentinel
     template <typename TOther>
     friend class sentinel;
 
-    friend class condition;
-
+  
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;
     ref<shared_recursive_mutex> mutex_;
@@ -208,8 +207,6 @@ class sentinel<const T>
 
     template <typename TOther>
     friend class sentinel;
-
-    friend class condition;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;

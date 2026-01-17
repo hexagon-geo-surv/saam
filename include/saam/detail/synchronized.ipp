@@ -106,10 +106,151 @@ sentinel<T> synchronized<T>::lock_mut() const
 
 template <typename T>
     requires(!std::is_const_v<T>)
-
 sentinel<const T> synchronized<T>::lock() const
 {
     return sentinel<const T>(*this);
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+synchronized<T>::condition::condition(const synchronized &synched, std::function<bool(const T &)> fulfillment_criteria) :
+    protected_instance_(synched.protected_instance_.borrow()),
+    fulfillment_criteria_(std::move(fulfillment_criteria))
+{
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+template <typename TClock, typename TDuration>
+typename synchronized<T>::condition::wait_result synchronized<T>::condition::wait(
+    sentinel<T> &sentinel, std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout)
+{
+    assert(!sentinel.mutex_.is_moved_from());
+    // Ensure that the condition is related to the sentinel
+    assert(sentinel.protected_instance_ == protected_instance_);
+
+    auto internal_mutex_lock{sentinel.mutex_->acquire_internal_mutex()};
+
+    // Can't go sleep with holding the lock count, otherwise others cannot change the state of the synchronized instance
+    (void)sentinel.mutex_->unregister_unique_count();
+    // Do not notify yet the threads that are waiting to acquire a senrinel.
+    // Delay it until the waiting predicate is called the first time.
+
+    const auto waiting_predicate = [&]() {
+        sentinel.mutex_->register_unique_count(internal_mutex_lock);
+        const bool criteria_met = fulfillment_criteria_(*sentinel);
+        if (!criteria_met)
+        {
+            auto no_lock_counts = sentinel.mutex_->unregister_unique_count();
+            if (no_lock_counts)
+            {
+                // Even though the internal mutex is still locked here, this is the last change for the notification
+                // before going to sleep.
+                sentinel.mutex_->notify_mutex_free_condition(true);
+            }
+        }
+        return criteria_met;
+    };
+
+    wait_result result;
+
+    if (!maybe_timeout.has_value())
+    {
+        condition_variable_.wait(internal_mutex_lock, waiting_predicate);
+        result = wait_result::criteria_met;
+    }
+    else
+    {
+        auto &timeout = maybe_timeout.value();
+        if (std::holds_alternative<std::chrono::milliseconds>(timeout))
+        {
+            const bool criteria_met =
+                condition_variable_.wait_for(internal_mutex_lock, std::get<std::chrono::milliseconds>(timeout), waiting_predicate);
+            result = criteria_met ? wait_result::criteria_met : wait_result::timeout;
+        }
+        else
+        {
+            const bool criteria_met = condition_variable_.wait_until(
+                internal_mutex_lock, std::get<std::chrono::time_point<TClock, TDuration>>(timeout), waiting_predicate);
+            result = criteria_met ? wait_result::criteria_met : wait_result::timeout;
+        }
+    }
+
+    return result;
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+template <typename TClock, typename TDuration>
+typename synchronized<T>::condition::wait_result synchronized<T>::condition::wait(
+    sentinel<const T> &sentinel, std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout)
+{
+    assert(!sentinel.mutex_.is_moved_from());
+    // Ensure that the condition is related to the sentinel
+    assert(sentinel.protected_instance_ == protected_instance_);
+
+    auto internal_mutex_lock{sentinel.mutex_->acquire_internal_mutex()};
+
+    // Can't go sleep with holding the lock count, otherwise others cannot change the state of the synchronized instance
+    (void)sentinel.mutex_->unregister_shared_count();
+    // Do not notify yet the threads that are waiting to acquire a senrinel.
+    // Delay it until the waiting predicate is called the first time.
+
+    const auto waiting_predicate = [&]() {
+        sentinel.mutex_->register_shared_count(internal_mutex_lock);
+        const bool criteria_met = fulfillment_criteria_(*sentinel);
+        if (!criteria_met)
+        {
+            auto no_lock_counts = sentinel.mutex_->unregister_shared_count();
+            if (no_lock_counts)
+            {
+                // Even though the internal mutex is still locked here, this is the last change for the notification
+                // before going to sleep.
+                sentinel.mutex_->notify_mutex_free_condition(true);
+            }
+        }
+        return criteria_met;
+    };
+
+    wait_result result;
+
+    if (!maybe_timeout.has_value())
+    {
+        condition_variable_.wait(internal_mutex_lock, waiting_predicate);
+        result = wait_result::criteria_met;
+    }
+    else
+    {
+        auto &timeout = maybe_timeout.value();
+        if (std::holds_alternative<std::chrono::milliseconds>(timeout))
+        {
+            const bool criteria_met =
+                condition_variable_.wait_for(internal_mutex_lock, std::get<std::chrono::milliseconds>(timeout), waiting_predicate);
+            result = criteria_met ? wait_result::criteria_met : wait_result::timeout;
+        }
+        else
+        {
+            const bool criteria_met = condition_variable_.wait_until(
+                internal_mutex_lock, std::get<std::chrono::time_point<TClock, TDuration>>(timeout), waiting_predicate);
+            result = criteria_met ? wait_result::criteria_met : wait_result::timeout;
+        }
+    }
+
+    return result;
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+void synchronized<T>::condition::notify_one()
+{
+    condition_variable_.notify_one();
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+void synchronized<T>::condition::notify_all()
+{
+    condition_variable_.notify_all();
 }
 
 }  // namespace saam

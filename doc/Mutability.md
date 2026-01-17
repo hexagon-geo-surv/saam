@@ -68,17 +68,18 @@ int swap_number(int new_number)
 the correct mutex is locked when a condition is waited on.
 
 ```cpp
-saam::condition value_changed_condition(number);
+saam::synchronized<int> number(5);
+saam::synchronized<int>::condition greater_than_5_condition(number, [](const int &val) { return val > 5; });
 ```
 
 Waiting for a condition variable uses familiar STL syntax.
 ```cpp
 // sentinel assures synchrony
-saam::sentinel<const int> locked_number_immut = number;
+saam::sentinel<int> locked_number_immut = number;
 
 // mutex is released during waiting
 // the exit criterion always takes a const type as parameter
-value_changed.wait(locked_number_immut, [](const int &val) { return val > 5; });
+greater_than_5_condition.wait(locked_number_immut);
 
 // waiting has finished, the sentinel is locked again, and it is safe to access the variable
 print(*locked_number_immut);
@@ -89,7 +90,7 @@ If the sentinel and the condition variable are not associated with the same sync
 ```cpp
 saam::sentinel<int> locked_number_mut = number;
 
-value_changed.wait(locked_number_mut, [](const int &val) { return val > 5; });
+greater_than_5_condition.wait(locked_number_mut);
 
 // mutable sentinel allows modifications
 *locked_number_mut = 10;
@@ -98,23 +99,20 @@ value_changed.wait(locked_number_mut, [](const int &val) { return val > 5; });
 The waiting time can be limited on the wait function.
 ```cpp
 // Relative waiting time
-auto wait_result = value_changed.wait(locked_number_mut, [](const int &val) { return val > 5; }, std::chrono::milliseconds(4));
+auto wait_result = greater_than_5_condition.wait(locked_number_mut, std::chrono::milliseconds(4));
 if (wait_result == saam::condition::wait_result::timeout)
     // timeout
 
 // Or it can be absolute
-wait_result = value_changed.wait(locked_number_mut, [](const int &val) { return val > 5; }, std::system_clock::time_point(........));
+wait_result = greater_than_5_condition.wait(locked_number_mut, std::system_clock::time_point(........));
 ```
-
-The `synchronized` instance and its related `condition` instances are bound via smart references. If the
-`synchronized` object is destroyed before all its `condition`s are released, `saam` will panic.
 
 Conditions can be triggered, similar to STL:
 ```cpp
 // Notify all waiting threads
-value_changed_condition.notify(saam::condition::notification_scope::all_waiter);
+greater_than_5_condition.notify_all();
 // Notify one waiting thread
-value_changed_condition.notify();
+greater_than_5_condition.notify_one();
 ```
 
 ## Synchronized member variables
