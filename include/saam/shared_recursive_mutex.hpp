@@ -167,7 +167,7 @@ class shared_recursive_mutex
     std::thread::id unique_owner_thread_;
     // 0 unlocked
     // positive values: number of shared locks
-    // negative values: number of reursive exclusive locks from the owner thread
+    // negative values: number of recursive exclusive locks from the owner thread
     std::int64_t lock_count_{0};
     std::condition_variable mutex_free_condition_;
 };
