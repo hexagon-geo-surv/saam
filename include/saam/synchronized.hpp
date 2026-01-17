@@ -6,11 +6,15 @@
 
 #include <saam/safe_ref.hpp>
 #include <saam/sentinel.hpp>
+#include <saam/shared_recursive_mutex.hpp>
 
-#include <mutex>
-#include <shared_mutex>
+#include <chrono>
+#include <condition_variable>
+#include <functional>
+#include <optional>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 namespace saam
 {
@@ -22,91 +26,76 @@ template <typename T>
 class synchronized
 {
   public:
-    synchronized() = default;
+    class condition
+    {
+      public:
+        condition(const synchronized &synched, std::function<bool(const T &)> fulfillment_criteria);
+
+        enum class wait_result : std::uint8_t
+        {
+            criteria_met,
+            timeout
+        };
+
+        template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
+        wait_result wait(sentinel<T> &sentinel,
+                         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
+                             std::nullopt);
+
+        template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
+        wait_result wait(sentinel<const T> &sentinel,
+                         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
+                             std::nullopt);
+
+        void notify_one();
+        void notify_all();
+
+      private:
+        saam::ref<T> protected_instance_;
+        std::condition_variable condition_variable_;
+        std::function<bool(const T &)> fulfillment_criteria_;
+    };
+
+    synchronized();
 
     template <typename... Args>
-    explicit synchronized(std::in_place_t, Args &&...args) :
-        protected_instance_(std::forward<Args>(args)...)
-    {
-    }
+    explicit synchronized(std::in_place_t, Args &&...args);
 
-    explicit synchronized(const T &instance) :
-        protected_instance_(instance)
-    {
-    }
+    explicit synchronized(const T &instance);
 
-    explicit synchronized(T &&instance) :
-        protected_instance_(std::move(instance))
-    {
-    }
+    explicit synchronized(T &&instance);
 
     // No conversion copy constructor, because of the slicing of T - only the base class would be copied
-    synchronized(const synchronized &other) :
-        protected_instance_(*other.lock())
-    {
-        // Just take the other instance, synchronizedes of "this" and "other" are independent
-    }
+    synchronized(const synchronized &other);
 
     // No conversion move constructor, because of the slicing of T - only the base class would be copied
-    synchronized(synchronized &&other) noexcept :
-        protected_instance_(std::move(*other.lock_mut()))
-    {
-        // Just take the other instance, synchronizedes of "this" and "other" are independent
-    }
+    synchronized(synchronized &&other) noexcept;
 
     // No conversion copy assignment, because of the slicing of T - only the base class would be copied
-    synchronized &operator=(const synchronized &other)
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        std::scoped_lock lock(protector_mutex_, other.protector_mutex_);
-
-        // Just take the other instance, synchronizedes of "this" and "other" are independent
-        protected_instance_ = other.protected_instance_;
-
-        return *this;
-    }
+    synchronized &operator=(const synchronized &other);
 
     // No conversion move assignment, because of the slicing of T - only the base class would be copied
-    synchronized &operator=(synchronized &&other) noexcept
-    {
-        if (this == &other)
-        {
-            return *this;
-        }
-
-        std::scoped_lock lock(protector_mutex_, other.protector_mutex_);
-
-        // Just take the other instance, mutexes of "this" and "other" are independent
-        protected_instance_ = std::move(other.protected_instance_);
-
-        return *this;
-    }
+    synchronized &operator=(synchronized &&other) noexcept;
 
     // No race condition is possible during destruction
     // If another thread is in the class then it must have a smart reference (ref instance),
     // so the smart owner (var instance) does not let wrapped the synchronized deleted destructed
-    ~synchronized() = default;
+    ~synchronized();
 
     // All borrowings are const operations, because borrowing just provides access to the underlying object - does not change the managed
     // wrapper.
 
+    // Use a mutex from another synchronized. This way the the same mutex protects the instances wrapped by of both synchronized
+    // Useful, when the base class has a synchronized and the derived also has a synchronized and we want to use the mutex from the base
+    // class.
+    template <typename TOther>
+    synchronized &use_mutex_of(ref<synchronized<TOther>> other);
+
     // Mutable borrow
-    template <typename TMut = T>
-        requires(!std::is_const_v<TMut>)
-    [[nodiscard]] sentinel<T> lock_mut() const
-    {
-        return sentinel<T>(const_cast<synchronized *>(this)->protected_instance_, std::unique_lock(protector_mutex_));
-    }
+    [[nodiscard]] sentinel<T> lock_mut() const;
 
     // Immutable borrow
-    [[nodiscard]] sentinel<const T> lock() const
-    {
-        return sentinel<const T>(protected_instance_, std::shared_lock(protector_mutex_));
-    }
+    [[nodiscard]] sentinel<const T> lock() const;
 
   private:
     template <typename TOther>
@@ -116,54 +105,14 @@ class synchronized
     template <typename TOther>
     friend class sentinel;
 
-    friend class condition;
+    var<shared_recursive_mutex> mutex_;
+    ref<shared_recursive_mutex> active_mutex_{mutex_};
 
-    mutable std::shared_mutex protector_mutex_;
-    // When a shared mutex is released in a locked state, it is an undefined behavior.
-    // Wrapping the instance in var and locks take a ref, this situation is detected.
-    saam::var<T> protected_instance_;
+    // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
+    // This case shall trigger a panic.
+    var<T> protected_instance_;
 };
 
-template <typename T>
-template <typename TOther>
-    requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-sentinel<T>::sentinel(const synchronized<TOther> &other) noexcept :
-    sentinel(const_cast<synchronized<TOther> &>(other).protected_instance_,
-             std::unique_lock(const_cast<synchronized<TOther> &>(other).protector_mutex_))
-{
-}
-
-template <typename T>
-template <typename TOther>
-    requires(std::is_convertible_v<TOther *, const T *> && !std::is_const_v<TOther>)
-sentinel<const T>::sentinel(const synchronized<TOther> &other) noexcept :
-    sentinel(const_cast<synchronized<TOther> &>(other).protected_instance_,
-             std::shared_lock(const_cast<synchronized<TOther> &>(other).protector_mutex_))
-{
-}
-
-template <typename T>
-template <typename TOther>
-    requires std::is_convertible_v<TOther *, T *>
-sentinel<T> &sentinel<T>::operator=(const synchronized<TOther> &other) noexcept
-{
-    protected_instance_ = other.protected_instance_;
-
-    lock_ = std::unique_lock(other.protector_mutex_);
-
-    return *this;
-}
-
-template <typename T>
-template <typename TOther>
-    requires std::is_convertible_v<TOther *, const T *>
-sentinel<const T> &sentinel<const T>::operator=(const synchronized<TOther> &other) noexcept
-{
-    protected_instance_ = other.protected_instance_;
-
-    lock_ = std::shared_lock(other.protector_mutex_);
-
-    return *this;
-}
-
 }  // namespace saam
+
+#include <saam/detail/synchronized.ipp>

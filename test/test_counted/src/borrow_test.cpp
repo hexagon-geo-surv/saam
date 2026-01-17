@@ -91,6 +91,7 @@ TEST(counted_borrow_test, borrow_move_copy_construction)
 
     saam::ref<const std::string> moved_text(std::move(text_ref));
     ASSERT_EQ(moved_text->at(0), 'H');
+    ASSERT_TRUE(text_ref.is_moved_from());
 }
 
 TEST(counted_borrow_test, borrow_move_copy_different_instance_assignment)
@@ -105,6 +106,7 @@ TEST(counted_borrow_test, borrow_move_copy_different_instance_assignment)
 
     textref2 = std::move(textref1);
     ASSERT_EQ(textref2->at(0), 'H');
+    ASSERT_TRUE(textref1.is_moved_from());
 }
 
 TEST(counted_borrow_test, borrow_move_copy_same_instance_assignment)
@@ -117,6 +119,7 @@ TEST(counted_borrow_test, borrow_move_copy_same_instance_assignment)
 
     textref2 = std::move(textref1);
     ASSERT_EQ(textref2->at(0), 'H');
+    ASSERT_TRUE(textref1.is_moved_from());
 }
 
 TEST(counted_borrow_test, moving_instance)

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <saam/detail/ref.hpp>
-#include <saam/detail/var.hpp>
+#include <saam/ref.hpp>
+#include <saam/var.hpp>
 
 #include <type_traits>
 
@@ -132,6 +132,12 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const var<TOther, TBor
         ref(const_cast<var<TOther, TBorrowManager> &>(other).instance_, &const_cast<var<TOther, TBorrowManager> &>(other).borrow_manager_));
 
     return *this;
+}
+
+template <typename T, borrow_manager TBorrowManager>
+[[nodiscard]] bool ref<T, TBorrowManager>::is_moved_from() const noexcept
+{
+    return instance_ == nullptr;
 }
 
 template <typename T, borrow_manager TBorrowManager>

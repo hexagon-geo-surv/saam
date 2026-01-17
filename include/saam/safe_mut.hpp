@@ -4,5 +4,6 @@
 
 #pragma once
 
-#include <saam/ref.hpp>
-#include <saam/var.hpp>
+#include <saam/synchronized.hpp>
+#include <saam/sentinel.hpp>
+#include <saam/condition.hpp>

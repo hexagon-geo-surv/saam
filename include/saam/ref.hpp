@@ -74,6 +74,10 @@ class ref : private TBorrowManager::ref_base
 
     ~ref() = default;
 
+    // When the reference is in a moved-from state, it does not contain a valid address to an instance
+    // Reassigning the reference will make it valid again
+    [[nodiscard]] bool is_moved_from() const noexcept;
+
     // Equality of references, not the underlying objects --> similar to smart pointers
     [[nodiscard]] bool operator==(const ref &other) const noexcept;
 
@@ -123,3 +127,5 @@ template <typename T, borrow_manager TBorrowManager>
 ref(ref<T, TBorrowManager>) -> ref<T, TBorrowManager>;
 
 }  // namespace saam
+
+#include <saam/detail/ref.ipp>
