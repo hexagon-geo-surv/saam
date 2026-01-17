@@ -335,7 +335,7 @@ sentinel<const T> &sentinel<const T>::operator=(const synchronized<TOther> &othe
     protected_instance_ = other.protected_instance_;
     mutex_ = other.active_mutex_;
 
-    // The mutex reference in a syhcronized is always valid, can be locked without any check
+    // The mutex reference in a synchronized is always valid, can be locked without any check
     mutex_->lock_shared();
 
     return *this;
