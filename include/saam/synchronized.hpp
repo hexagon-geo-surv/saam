@@ -108,7 +108,7 @@ class synchronized
     var<shared_recursive_mutex> mutex_;
     ref<shared_recursive_mutex> active_mutex_{mutex_};
 
-    // When a syhcronized instance is released in a locked state, the outstanding locks contain invalid reference.
+    // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
     // This case shall trigger a panic.
     var<T> protected_instance_;
 };
