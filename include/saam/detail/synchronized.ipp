@@ -193,7 +193,7 @@ typename synchronized<T>::condition::wait_result synchronized<T>::condition::wai
 
     // Can't go sleep with holding the lock count, otherwise others cannot change the state of the synchronized instance
     (void)sentinel.mutex_->unregister_shared_count();
-    // Do not notify yet the threads that are waiting to acquire a senrinel.
+    // Do not notify yet the threads that are waiting to acquire a sentinel.
     // Delay it until the waiting predicate is called the first time.
 
     const auto waiting_predicate = [&]() {
