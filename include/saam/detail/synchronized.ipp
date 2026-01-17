@@ -204,7 +204,7 @@ typename synchronized<T>::condition::wait_result synchronized<T>::condition::wai
             auto no_lock_counts = sentinel.mutex_->unregister_shared_count();
             if (no_lock_counts)
             {
-                // Even though the internal mutex is still locked here, this is the last change for the notification
+                // Even though the internal mutex is still locked here, this is the last chance for the notification
                 // before going to sleep.
                 sentinel.mutex_->notify_mutex_free_condition(true);
             }
