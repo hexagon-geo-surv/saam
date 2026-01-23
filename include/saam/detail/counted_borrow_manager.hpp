@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <functional>
 #include <limits>
 #include <typeinfo>
 
@@ -17,7 +18,9 @@ namespace saam
 // The user must define this function to handle the dangling reference situation.
 // After this function, dangling reference(s) exist in the process, so the memory is possibly going to be corrupted soon.
 // Therefore, after returning from this function, the process will be aborted.
-void dangling_reference_panic(const std::type_info &var_type, void *var_instance, std::size_t num_dangling_references) noexcept;
+using dangling_reference_panic_t =
+    std::function<void(const std::type_info &var_type, void *var_instance, std::size_t num_dangling_references)>;
+inline dangling_reference_panic_t dangling_reference_panic;
 
 class counted_borrow_manager
 {
@@ -146,7 +149,10 @@ class counted_borrow_manager
         if (destroyed_with_active_references)
         {
             const auto num_dangling_references = counter_.load();
-            dangling_reference_panic(var_type, var_instance, num_dangling_references);
+            if (dangling_reference_panic)
+            {
+                dangling_reference_panic(var_type, var_instance, num_dangling_references);
+            }
             abort();
         }
     }
