@@ -113,6 +113,42 @@ guard<const T> synchronized<T>::commence() const
 
 template <typename T>
     requires(!std::is_const_v<T>)
+template <typename... Args>
+synchronized<T> &synchronized<T>::emplace(Args &&...args)
+{
+    *commence_mut() = T(std::forward<Args>(args)...);
+    return *this;
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+[[nodiscard]] guard<T> synchronized<T>::operator->() const noexcept
+{
+    return guard<T>(*this);
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+synchronized<T> &synchronized<T>::operator=(const T &instance) noexcept
+{
+    *commence_mut() = instance;
+    return *this;
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+synchronized<T> &synchronized<T>::operator=(T &&instance) noexcept
+{
+    *commence_mut() = std::move(instance);
+    return *this;
+}
+
+//
+// Condition class implementation
+//
+
+template <typename T>
+    requires(!std::is_const_v<T>)
 synchronized<T>::condition::condition(const synchronized &synched, std::function<bool(const T &)> fulfillment_criteria) :
     protected_instance_(synched.protected_instance_.borrow()),
     fulfillment_criteria_(std::move(fulfillment_criteria))
