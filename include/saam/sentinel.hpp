@@ -23,6 +23,63 @@ class sentinel
   public:
     using value_t = T;
 
+    class blindfold
+    {
+      public:
+        explicit blindfold(sentinel &sentinel) :
+            original_sentinel_(&sentinel),
+            unlocked_sentinel_(std::move([](auto &&sent) {
+                sent.unlock();
+                return std::forward<decltype(sent)>(sent);
+            }(std::move(sentinel))))
+        {
+        }
+
+        blindfold(const blindfold &other) = delete;
+        blindfold(blindfold &&other) :
+            original_sentinel_(other.original_sentinel_),
+            unlocked_sentinel_(std::move(other.unlocked_sentinel_))
+        {
+            other.original_sentinel_ = nullptr;
+        }
+
+        blindfold &operator=(const blindfold &other) = delete;
+        blindfold &operator=(blindfold &&other)
+        {
+            if (this == &other)
+            {
+                return *this;
+            }
+
+            unblind_original_sentinel();
+
+            original_sentinel_ = other.original_sentinel_;
+            unlocked_sentinel_ = std::move(other.unlocked_sentinel_);
+            other.original_sentinel_ = nullptr;
+
+            return *this;
+        }
+
+        ~blindfold()
+        {
+            unblind_original_sentinel();
+        }
+
+      private:
+        void unblind_original_sentinel()
+        {
+            if (original_sentinel_ != nullptr)
+            {
+                *original_sentinel_ = std::move(unlocked_sentinel_);
+                original_sentinel_->lock();
+                original_sentinel_ = nullptr;
+            }
+        }
+
+        sentinel *original_sentinel_;
+        sentinel unlocked_sentinel_;
+    };
+
     // Unique sentinel is unique, after the copy we would have two unique sentinels, which is not unique anymore
     sentinel(const sentinel<T> &other) = delete;
 
@@ -96,7 +153,9 @@ class sentinel
     template <typename TOther>
     friend class sentinel;
 
-  
+    void lock() noexcept;
+    void unlock() noexcept;
+
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;
     ref<shared_recursive_mutex> mutex_;
@@ -108,6 +167,63 @@ class sentinel<const T>
 {
   public:
     using value_t = const T;
+
+    class blindfold
+    {
+      public:
+        explicit blindfold(sentinel &sentinel) :
+            original_sentinel_(&sentinel),
+            unlocked_sentinel_(std::move([](auto &&sent) {
+                sent.unlock();
+                return std::forward<decltype(sent)>(sent);
+            }(std::move(sentinel))))
+        {
+        }
+
+        blindfold(const blindfold &other) = delete;
+        blindfold(blindfold &&other) :
+            original_sentinel_(other.original_sentinel_),
+            unlocked_sentinel_(std::move(other.unlocked_sentinel_))
+        {
+            other.original_sentinel_ = nullptr;
+        }
+
+        blindfold &operator=(const blindfold &other) = delete;
+        blindfold &operator=(blindfold &&other)
+        {
+            if (this == &other)
+            {
+                return *this;
+            }
+
+            unblind_original_sentinel();
+
+            original_sentinel_ = other.original_sentinel_;
+            unlocked_sentinel_ = std::move(other.unlocked_sentinel_);
+            other.original_sentinel_ = nullptr;
+
+            return *this;
+        }
+
+        ~blindfold()
+        {
+            unblind_original_sentinel();
+        }
+
+      private:
+        void unblind_original_sentinel()
+        {
+            if (original_sentinel_ != nullptr)
+            {
+                *original_sentinel_ = std::move(unlocked_sentinel_);
+                original_sentinel_->lock();
+                original_sentinel_ = nullptr;
+            }
+        }
+
+        sentinel *original_sentinel_;
+        sentinel unlocked_sentinel_;
+    };
 
     // Conversion copy constructor
     template <typename TOther>
@@ -208,8 +324,11 @@ class sentinel<const T>
     template <typename TOther>
     friend class sentinel;
 
+    void lock() noexcept;
+    void unlock() noexcept;
+
     // track the protected instance via a ref to detect the destruction of the synchronized instance
-    ref<T> protected_instance_;
+    ref<const T> protected_instance_;
     ref<shared_recursive_mutex> mutex_;
 };
 

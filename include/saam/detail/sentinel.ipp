@@ -43,8 +43,7 @@ sentinel<T>::sentinel(const synchronized<TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.active_mutex_)
 {
-    // The mutex reference in a synchronized is always valid, can be locked without any check
-    mutex_->lock();
+    lock();
 }
 
 template <typename T>
@@ -57,10 +56,7 @@ sentinel<T> &sentinel<T>::operator=(sentinel<TOther> &&other) noexcept
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock();
-    }
+    unlock();
 
     protected_instance_ = std::move(other.protected_instance_);
     mutex_ = std::move(other.mutex_);
@@ -79,10 +75,7 @@ sentinel<T> &sentinel<T>::operator=(sentinel<T> &&other) noexcept
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock();
-    }
+    unlock();
 
     protected_instance_ = std::move(other.protected_instance_);
     mutex_ = std::move(other.mutex_);
@@ -103,22 +96,33 @@ sentinel<T> &sentinel<T>::operator=(const synchronized<TOther> &other) noexcept
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock();
-    }
+    unlock();
 
     protected_instance_ = other.protected_instance_;
     mutex_ = other.active_mutex_;
 
-    // The mutex reference in a syhcronized is always valid, can be locked without any check
-    mutex_->lock();
+    lock();
 
     return *this;
 }
 
 template <typename T>
 sentinel<T>::~sentinel()
+{
+    unlock();
+}
+
+template <typename T>
+void sentinel<T>::lock() noexcept
+{
+    if (!mutex_.is_moved_from())
+    {
+        mutex_->lock();
+    }
+}
+
+template <typename T>
+void sentinel<T>::unlock() noexcept
 {
     if (!mutex_.is_moved_from())
     {
@@ -173,10 +177,7 @@ sentinel<const T>::sentinel(const sentinel<const TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.mutex_)
 {
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->lock_shared();
-    }
+    lock();
 }
 
 template <typename T>
@@ -184,10 +185,7 @@ sentinel<const T>::sentinel(const sentinel<const T> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.mutex_)
 {
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->lock_shared();
-    }
+    lock();
 }
 
 template <typename T>
@@ -218,7 +216,7 @@ sentinel<const T>::sentinel(const synchronized<TOther> &other) noexcept :
     mutex_(other.mutex_)
 {
     // The mutex reference in a synchronized is always valid, can be locked without any check
-    mutex_->lock_shared();
+    lock();
 }
 
 template <typename T>
@@ -231,18 +229,12 @@ sentinel<const T> &sentinel<const T>::operator=(const sentinel<const TOther> &ot
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock_shared();
-    }
+    unlock();
 
     protected_instance_ = other.protected_instance_;
     mutex_ = other.mutex_;
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->lock_shared();
-    }
+    lock();
 
     return *this;
 }
@@ -255,18 +247,12 @@ sentinel<const T> &sentinel<const T>::operator=(const sentinel<const T> &other)
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock_shared();
-    }
+    unlock();
 
     protected_instance_ = other.protected_instance_;
     mutex_ = other.mutex_;
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->lock_shared();
-    }
+    lock();
 
     return *this;
 }
@@ -281,10 +267,7 @@ sentinel<const T> &sentinel<const T>::operator=(sentinel<const TOther> &&other) 
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock_shared();
-    }
+    unlock();
 
     protected_instance_ = std::move(other.protected_instance_);
     mutex_ = std::move(other.mutex_);
@@ -303,10 +286,7 @@ sentinel<const T> &sentinel<const T>::operator=(sentinel<const T> &&other) noexc
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock_shared();
-    }
+    unlock();
 
     protected_instance_ = std::move(other.protected_instance_);
     mutex_ = std::move(other.mutex_);
@@ -327,22 +307,34 @@ sentinel<const T> &sentinel<const T>::operator=(const synchronized<TOther> &othe
         return *this;
     }
 
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock_shared();
-    }
+    unlock();
 
     protected_instance_ = other.protected_instance_;
     mutex_ = other.active_mutex_;
 
     // The mutex reference in a synchronized is always valid, can be locked without any check
-    mutex_->lock_shared();
+    lock();
 
     return *this;
 }
 
 template <typename T>
 sentinel<const T>::~sentinel()
+{
+    unlock();
+}
+
+template <typename T>
+void sentinel<const T>::lock() noexcept
+{
+    if (!mutex_.is_moved_from())
+    {
+        mutex_->lock_shared();
+    }
+}
+
+template <typename T>
+void sentinel<const T>::unlock() noexcept
 {
     if (!mutex_.is_moved_from())
     {

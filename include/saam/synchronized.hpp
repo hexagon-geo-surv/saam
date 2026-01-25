@@ -91,10 +91,10 @@ class synchronized
     template <typename TOther>
     synchronized &use_mutex_of(ref<synchronized<TOther>> other);
 
-    // Mutable borrow
+    // Mutable lock
     [[nodiscard]] sentinel<T> lock_mut() const;
 
-    // Immutable borrow
+    // Immutable lock
     [[nodiscard]] sentinel<const T> lock() const;
 
   private:
