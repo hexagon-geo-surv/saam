@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include <saam/sentinel.hpp>
+#include <saam/guard.hpp>
 #include <saam/synchronized.hpp>
 
 #include <gmock/gmock.h>
@@ -25,36 +25,36 @@ class blindfold_test : public ::testing::Test
     saam::synchronized<std::string> text_;
 };
 
-TEST_F(blindfold_test, blindfold_shared_sentinel)
+TEST_F(blindfold_test, blindfold_shared_guard)
 {
-    saam::sentinel<const std::string> text_sent(text_);
-    saam::sentinel<const std::string>::blindfold sent_bf(text_sent);
+    saam::guard<const std::string> text_sent(text_);
+    saam::guard<const std::string>::blindfold sent_bf(text_sent);
 
     ASSERT_DEATH((void)text_sent->at(0), "");
 }
 
-TEST_F(blindfold_test, blindfold_unique_sentinel)
+TEST_F(blindfold_test, blindfold_unique_guard)
 {
-    saam::sentinel<std::string> text_sent(text_);
-    saam::sentinel<std::string>::blindfold sent_bf2(text_sent);
+    saam::guard<std::string> text_sent(text_);
+    saam::guard<std::string>::blindfold sent_bf2(text_sent);
 
     ASSERT_DEATH((void)text_sent->at(0), "");
 }
 
 TEST_F(blindfold_test, blindfold_shared_destruction_restores_access)
 {
-    saam::sentinel<const std::string> text_sent(text_);
+    saam::guard<const std::string> text_sent(text_);
     {
-        saam::sentinel<const std::string>::blindfold sent_bf(text_sent);
+        saam::guard<const std::string>::blindfold sent_bf(text_sent);
     }
     EXPECT_FALSE(text_sent->empty());
 }
 
 TEST_F(blindfold_test, blindfold_unique_destruction_restores_access)
 {
-    saam::sentinel<std::string> text_sent(text_);
+    saam::guard<std::string> text_sent(text_);
     {
-        saam::sentinel<std::string>::blindfold sent_bf(text_sent);
+        saam::guard<std::string>::blindfold sent_bf(text_sent);
     }
     EXPECT_FALSE(text_sent->empty());
 }

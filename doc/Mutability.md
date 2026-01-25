@@ -20,46 +20,50 @@ saam::synchronized<int> number(5);
 Note that the underlying type is never a `const` type. `const` types cannot be mutated and therefore
 do not require thread synchronization. Reading is safe from any number of threads without synchronization.
 
+## Guards
+
 Similar to `saam::ref`, smart mutex uses proxy objects to provide access to the underlying type.
-These are the `saam::sentinel` objects.
+These are the `saam::guard` objects.
 
 Create a mutable proxy from the synchronized object. The template parameter being not `const`
 indicates that this is a unique lock—there can be only one at a time.
 Unique locks allow reading and writing to the underlying object.
 ```cpp
-saam::sentinel<int> locked_number_mut = number;
+saam::guard<int> number_mut_guard{number};
 ```
 
-Alternatively, `saam::synchronized` factory methods can create sentinels.
-This syntax is useful to create temporary sentinels in a long expression.
+Alternatively, `saam::synchronized` factory methods can create guards.
+This syntax is useful to create temporary guards in a long expression.
 ```cpp
-auto doubled = *number.lock_mut() + *number.lock_mut();
+auto doubled = *number.commence() + *number.commence();
 ```
 
-Shared sentinels provide immutable (read-only) access, but multiple such sentinels may exist at the same time.
+Shared guards provide immutable (read-only) access, but multiple such guards may exist at the same time.
 There is a factory function for this as well.
 ```cpp
-saam::sentinel<const int> locked_number_immut = number;
-auto locked_number_immut = number.lock();
+saam::guard<const int> number_immut_guard{number};
+auto number_immut_guard{number.commence()};
 ```
 
-The `synchronized` instance and its related `sentinel` instances are bound via smart references. If the
-`synchronized` object is destroyed before all its `sentinel`s are released, `saam` will panic.
+The `synchronized` instance and its related `guard` instances are bound via smart references. If the
+`synchronized` object is destroyed before all its `guard`s are released, `saam` will panic.
 
+### Guard blindfolding
 
-```cpp
-int swap_number(int new_number)
-{
-    std::lock_guard lock(mutex_);
-    return number_;
-}
-```
+Sometimes it is necessary to suspend the watch of a guard for some time. This is done by blindfolding the guard.
+The `blindfold` is a RAII object that temporarily unlocks the mutex.
 
 ```cpp
-int swap_number(int new_number)
+saam::guard<const int> number_immut_guard{number};
+
+// As long as the blindfold is alive, the guard the lock is free. As soon as the blindfold
+// is released the guard is on duty again.
 {
-    return *locked_number_.lock();
+    saam::guard<const int>::blindfold number_immut_guard_blindfold{number_immut_guard};
+    *number_immut_guard = 5; // Using a blindfolded guard results in a moved-from saam::ref access - the process crashes.
 }
+
+*number_immut_guard = 5; // Blindfold is gone, the lock is alive, the guard is usable again.
 ```
 
 ## Condition variables
@@ -74,37 +78,37 @@ saam::synchronized<int>::condition greater_than_5_condition(number, [](const int
 
 Waiting for a condition variable uses familiar STL syntax.
 ```cpp
-// sentinel assures synchrony
-saam::sentinel<int> locked_number_immut = number;
+// guard assures synchrony
+saam::guard<int> number_immut_guard{number};
 
 // mutex is released during waiting
 // the exit criterion always takes a const type as parameter
-greater_than_5_condition.wait(locked_number_immut);
+greater_than_5_condition.wait(number_immut_guard);
 
-// waiting has finished, the sentinel is locked again, and it is safe to access the variable
-print(*locked_number_immut);
+// waiting has finished, the guard is locked again, and it is safe to access the variable
+print(*number_immut_guard);
 ```
 
-Waiting works with both immutable (see above) and mutable sentinels.
-If the sentinel and the condition variable are not associated with the same synchronized object, a panic will occur.
+Waiting works with both immutable (see above) and mutable guards.
+If the guard and the condition variable are not associated with the same synchronized object, a panic will occur.
 ```cpp
-saam::sentinel<int> locked_number_mut = number;
+saam::guard<int> number_mut_guard{number};
 
-greater_than_5_condition.wait(locked_number_mut);
+greater_than_5_condition.wait(number_mut_guard);
 
-// mutable sentinel allows modifications
-*locked_number_mut = 10;
+// mutable guard allows modifications
+*number_mut_guard = 10;
 ```
 
 The waiting time can be limited on the wait function.
 ```cpp
 // Relative waiting time
-auto wait_result = greater_than_5_condition.wait(locked_number_mut, std::chrono::milliseconds(4));
+auto wait_result = greater_than_5_condition.wait(number_mut_guard, std::chrono::milliseconds(4));
 if (wait_result == saam::condition::wait_result::timeout)
     // timeout
 
 // Or it can be absolute
-wait_result = greater_than_5_condition.wait(locked_number_mut, std::system_clock::time_point(........));
+wait_result = greater_than_5_condition.wait(number_mut_guard, std::system_clock::time_point(........));
 ```
 
 Conditions can be triggered, similar to STL:
@@ -115,7 +119,7 @@ greater_than_5_condition.notify_all();
 greater_than_5_condition.notify_one();
 ```
 
-## Synchronized member variables
+## Recommended integration into classes
 
 The following case study shows how to synchronize member variables of a class. The example is also extended with another concept,
 [Initialization Order Fiasco](https://www.youtube.com/watch?v=KWB-gDVuy_I&t=893s), which is not only useful for the smart mutex,

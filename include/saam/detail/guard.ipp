@@ -5,7 +5,7 @@
 #pragma once
 
 #include <saam/safe_ref.hpp>
-#include <saam/sentinel.hpp>
+#include <saam/guard.hpp>
 
 #include <cassert>
 
@@ -13,13 +13,13 @@ namespace saam
 {
 
 //
-// Unique sentinel
+// Unique guard
 //
 
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
-sentinel<T>::sentinel(sentinel<TOther> &&other) noexcept :
+guard<T>::guard(guard<TOther> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
     mutex_(std::move(other.mutex_))
 {
@@ -28,7 +28,7 @@ sentinel<T>::sentinel(sentinel<TOther> &&other) noexcept :
 }
 
 template <typename T>
-sentinel<T>::sentinel(sentinel<T> &&other) noexcept :
+guard<T>::guard(guard<T> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
     mutex_(std::move(other.mutex_))
 {
@@ -39,7 +39,7 @@ sentinel<T>::sentinel(sentinel<T> &&other) noexcept :
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-sentinel<T>::sentinel(const synchronized<TOther> &other) noexcept :
+guard<T>::guard(const synchronized<TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.active_mutex_)
 {
@@ -49,7 +49,7 @@ sentinel<T>::sentinel(const synchronized<TOther> &other) noexcept :
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
-sentinel<T> &sentinel<T>::operator=(sentinel<TOther> &&other) noexcept
+guard<T> &guard<T>::operator=(guard<TOther> &&other) noexcept
 {
     if (this == &other)
     {
@@ -68,7 +68,7 @@ sentinel<T> &sentinel<T>::operator=(sentinel<TOther> &&other) noexcept
 }
 
 template <typename T>
-sentinel<T> &sentinel<T>::operator=(sentinel<T> &&other) noexcept
+guard<T> &guard<T>::operator=(guard<T> &&other) noexcept
 {
     if (this == &other)
     {
@@ -89,7 +89,7 @@ sentinel<T> &sentinel<T>::operator=(sentinel<T> &&other) noexcept
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
-sentinel<T> &sentinel<T>::operator=(const synchronized<TOther> &other) noexcept
+guard<T> &guard<T>::operator=(const synchronized<TOther> &other) noexcept
 {
     if (this == &other)
     {
@@ -107,13 +107,13 @@ sentinel<T> &sentinel<T>::operator=(const synchronized<TOther> &other) noexcept
 }
 
 template <typename T>
-sentinel<T>::~sentinel()
+guard<T>::~guard()
 {
     unlock();
 }
 
 template <typename T>
-void sentinel<T>::lock() noexcept
+void guard<T>::lock() noexcept
 {
     if (!mutex_.is_moved_from())
     {
@@ -122,7 +122,7 @@ void sentinel<T>::lock() noexcept
 }
 
 template <typename T>
-void sentinel<T>::unlock() noexcept
+void guard<T>::unlock() noexcept
 {
     if (!mutex_.is_moved_from())
     {
@@ -131,49 +131,49 @@ void sentinel<T>::unlock() noexcept
 }
 
 template <typename T>
-bool sentinel<T>::operator==(const sentinel &other) const noexcept
+bool guard<T>::operator==(const guard &other) const noexcept
 {
     return protected_instance_ == other.protected_instance_;
 }
 
 template <typename T>
-bool sentinel<T>::operator!=(const sentinel &other) const noexcept
+bool guard<T>::operator!=(const guard &other) const noexcept
 {
     return !(*this == other);
 }
 
 template <typename T>
-T *sentinel<T>::operator->() const
+T *guard<T>::operator->() const
 {
     return protected_instance_.operator->();
 }
 
 template <typename T>
-T &sentinel<T>::operator*() const
+T &guard<T>::operator*() const
 {
     return *protected_instance_;
 }
 
 template <typename T>
-sentinel<T>::operator T &() const noexcept
+guard<T>::operator T &() const noexcept
 {
     return *protected_instance_;
 }
 
 template <typename T>
-sentinel<T>::operator T *() const noexcept
+guard<T>::operator T *() const noexcept
 {
     return static_cast<T *>(protected_instance_);
 }
 
 //
-// Shared sentinel
+// Shared guard
 //
 
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
-sentinel<const T>::sentinel(const sentinel<const TOther> &other) noexcept :
+guard<const T>::guard(const guard<const TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.mutex_)
 {
@@ -181,7 +181,7 @@ sentinel<const T>::sentinel(const sentinel<const TOther> &other) noexcept :
 }
 
 template <typename T>
-sentinel<const T>::sentinel(const sentinel<const T> &other) noexcept :
+guard<const T>::guard(const guard<const T> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.mutex_)
 {
@@ -191,7 +191,7 @@ sentinel<const T>::sentinel(const sentinel<const T> &other) noexcept :
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
-sentinel<const T>::sentinel(sentinel<const TOther> &&other) noexcept :
+guard<const T>::guard(guard<const TOther> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
     mutex_(std::move(other.mutex_))
 {
@@ -200,7 +200,7 @@ sentinel<const T>::sentinel(sentinel<const TOther> &&other) noexcept :
 }
 
 template <typename T>
-sentinel<const T>::sentinel(sentinel<const T> &&other) noexcept :
+guard<const T>::guard(guard<const T> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
     mutex_(std::move(other.mutex_))
 {
@@ -211,7 +211,7 @@ sentinel<const T>::sentinel(sentinel<const T> &&other) noexcept :
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, const T *> && !std::is_const_v<TOther>)
-sentinel<const T>::sentinel(const synchronized<TOther> &other) noexcept :
+guard<const T>::guard(const synchronized<TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
     mutex_(other.mutex_)
 {
@@ -222,7 +222,7 @@ sentinel<const T>::sentinel(const synchronized<TOther> &other) noexcept :
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
-sentinel<const T> &sentinel<const T>::operator=(const sentinel<const TOther> &other)
+guard<const T> &guard<const T>::operator=(const guard<const TOther> &other)
 {
     if (this == &other)
     {
@@ -240,7 +240,7 @@ sentinel<const T> &sentinel<const T>::operator=(const sentinel<const TOther> &ot
 }
 
 template <typename T>
-sentinel<const T> &sentinel<const T>::operator=(const sentinel<const T> &other)
+guard<const T> &guard<const T>::operator=(const guard<const T> &other)
 {
     if (this == &other)
     {
@@ -260,7 +260,7 @@ sentinel<const T> &sentinel<const T>::operator=(const sentinel<const T> &other)
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
-sentinel<const T> &sentinel<const T>::operator=(sentinel<const TOther> &&other) noexcept
+guard<const T> &guard<const T>::operator=(guard<const TOther> &&other) noexcept
 {
     if (this == &other)
     {
@@ -279,7 +279,7 @@ sentinel<const T> &sentinel<const T>::operator=(sentinel<const TOther> &&other) 
 }
 
 template <typename T>
-sentinel<const T> &sentinel<const T>::operator=(sentinel<const T> &&other) noexcept
+guard<const T> &guard<const T>::operator=(guard<const T> &&other) noexcept
 {
     if (this == &other)
     {
@@ -300,7 +300,7 @@ sentinel<const T> &sentinel<const T>::operator=(sentinel<const T> &&other) noexc
 template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
-sentinel<const T> &sentinel<const T>::operator=(const synchronized<TOther> &other) noexcept
+guard<const T> &guard<const T>::operator=(const synchronized<TOther> &other) noexcept
 {
     if (this == &other)
     {
@@ -319,13 +319,13 @@ sentinel<const T> &sentinel<const T>::operator=(const synchronized<TOther> &othe
 }
 
 template <typename T>
-sentinel<const T>::~sentinel()
+guard<const T>::~guard()
 {
     unlock();
 }
 
 template <typename T>
-void sentinel<const T>::lock() noexcept
+void guard<const T>::lock() noexcept
 {
     if (!mutex_.is_moved_from())
     {
@@ -334,7 +334,7 @@ void sentinel<const T>::lock() noexcept
 }
 
 template <typename T>
-void sentinel<const T>::unlock() noexcept
+void guard<const T>::unlock() noexcept
 {
     if (!mutex_.is_moved_from())
     {
@@ -343,37 +343,37 @@ void sentinel<const T>::unlock() noexcept
 }
 
 template <typename T>
-bool sentinel<const T>::operator==(const sentinel &other) const noexcept
+bool guard<const T>::operator==(const guard &other) const noexcept
 {
     return protected_instance_ == other.protected_instance_;
 }
 
 template <typename T>
-bool sentinel<const T>::operator!=(const sentinel &other) const noexcept
+bool guard<const T>::operator!=(const guard &other) const noexcept
 {
     return !(*this == other);
 }
 
 template <typename T>
-const T *sentinel<const T>::operator->() const
+const T *guard<const T>::operator->() const
 {
     return protected_instance_.operator->();
 }
 
 template <typename T>
-const T &sentinel<const T>::operator*() const
+const T &guard<const T>::operator*() const
 {
     return *protected_instance_;
 }
 
 template <typename T>
-sentinel<const T>::operator const T &() const noexcept
+guard<const T>::operator const T &() const noexcept
 {
     return *protected_instance_;
 }
 
 template <typename T>
-sentinel<const T>::operator const T *() const noexcept
+guard<const T>::operator const T *() const noexcept
 {
     return static_cast<const T *>(protected_instance_);
 }

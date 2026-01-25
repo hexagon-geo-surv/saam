@@ -5,7 +5,7 @@
 #pragma once
 
 #include <saam/safe_ref.hpp>
-#include <saam/sentinel.hpp>
+#include <saam/guard.hpp>
 #include <saam/shared_recursive_mutex.hpp>
 
 #include <chrono>
@@ -38,12 +38,12 @@ class synchronized
         };
 
         template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
-        wait_result wait(sentinel<T> &sentinel,
+        wait_result wait(guard<T> &guard,
                          std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
                              std::nullopt);
 
         template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
-        wait_result wait(sentinel<const T> &sentinel,
+        wait_result wait(guard<const T> &guard,
                          std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
                              std::nullopt);
 
@@ -91,11 +91,11 @@ class synchronized
     template <typename TOther>
     synchronized &use_mutex_of(ref<synchronized<TOther>> other);
 
-    // Mutable lock
-    [[nodiscard]] sentinel<T> lock_mut() const;
+    // Mutable unique lock
+    [[nodiscard]] guard<T> commence_mut() const;
 
-    // Immutable lock
-    [[nodiscard]] sentinel<const T> lock() const;
+    // Immutable shared lock
+    [[nodiscard]] guard<const T> commence() const;
 
   private:
     template <typename TOther>
@@ -103,7 +103,7 @@ class synchronized
     friend class synchronized;
 
     template <typename TOther>
-    friend class sentinel;
+    friend class guard;
 
     var<shared_recursive_mutex> mutex_;
     ref<shared_recursive_mutex> active_mutex_{mutex_};

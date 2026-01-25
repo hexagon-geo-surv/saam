@@ -23,7 +23,7 @@ TEST(condition_test, wait_on_condition)
         for (; !stop_thread;)
         {
             {
-                auto locked_m = synced_m.lock_mut();
+                auto locked_m = synced_m.commence_mut();
                 (*locked_m)++;
             }
             above_5_condition.notify_all();
@@ -32,9 +32,9 @@ TEST(condition_test, wait_on_condition)
     });
 
     {
-        auto sentinel = synced_m.lock();
-        above_5_condition.wait(sentinel);
-        ASSERT_GT(*sentinel, 5);
+        auto guard = synced_m.commence();
+        above_5_condition.wait(guard);
+        ASSERT_GT(*guard, 5);
     }
 
     stop_thread = true;
