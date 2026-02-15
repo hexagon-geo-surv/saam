@@ -76,4 +76,18 @@ TEST_F(synchronized_test, access_with_mutable_content)
     ASSERT_EQ(text.commence()->at(0), 'Y');
 }
 
+TEST_F(synchronized_test, commence_all)
+{
+    saam::synchronized<std::string> text("Hello world");
+    saam::synchronized<int> number(42);
+
+    auto [text_guard, number_guard] = commence_all<const std::string, int>(text, number);
+
+    ASSERT_EQ(text_guard->at(0), 'H');
+
+    ASSERT_EQ(*number_guard, 42);
+    *number_guard = 43;
+    ASSERT_EQ(*number_guard, 43);
+}
+
 }  // namespace saam::test

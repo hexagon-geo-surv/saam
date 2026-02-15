@@ -153,6 +153,10 @@ class guard
     template <typename TOther>
     friend class guard;
 
+    template <typename TOther>
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+    guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
+
     void lock() noexcept;
     void unlock() noexcept;
 
@@ -323,6 +327,10 @@ class guard<const T>
 
     template <typename TOther>
     friend class guard;
+
+    template <typename TOther>
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+    guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
 
     void lock() noexcept;
     void unlock() noexcept;

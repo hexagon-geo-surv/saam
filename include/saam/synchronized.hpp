@@ -8,17 +8,18 @@
 #include <saam/safe_ref.hpp>
 #include <saam/shared_recursive_mutex.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <condition_variable>
 #include <functional>
 #include <optional>
+#include <thread>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
 namespace saam
 {
-
 // Synchronized owns an instance of T and provides a thread-safe way to access it.
 // The lifetime of T is bound to the lifetime of the synchronized.
 template <typename T>
@@ -26,6 +27,7 @@ template <typename T>
 class synchronized
 {
   public:
+    using data_type_t = T;
     class condition
     {
       public:
@@ -129,7 +131,37 @@ class synchronized
     // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
     // This case shall trigger a panic.
     var<T> protected_instance_;
+
+    template <typename... TOther>
+    friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
 };
+
+template <typename... T>
+auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
+{
+    while (true)
+    {
+        bool all_guards_acquired = true;
+        auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
+            const auto locked = std::is_const_v<T> ? sync.active_mutex_->try_lock_shared() : sync.active_mutex_->try_lock();
+            if (locked)
+            {
+                return guard<T>(sync);
+            }
+
+            all_guards_acquired = false;
+            return std::nullopt;
+        }(syncs)...);
+
+        if (!all_guards_acquired)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+
+        return std::apply([](auto &&...optionals) { return std::make_tuple(std::move(*optionals)...); }, maybe_guards);
+    }
+}
 
 }  // namespace saam
 
