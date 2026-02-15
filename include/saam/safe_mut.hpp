@@ -5,5 +5,4 @@
 #pragma once
 
 #include <saam/synchronized.hpp>
-#include <saam/sentinel.hpp>
-#include <saam/condition.hpp>
+#include <saam/guard.hpp>

@@ -7,6 +7,7 @@
 #include <saam/detail/borrow_manager_traits.hpp>
 
 #include <cassert>
+#include <functional>
 #include <mutex>
 #include <stacktrace>
 
@@ -17,11 +18,12 @@ namespace saam
 // After this function, dangling reference(s) exist in the process, so the memory is possibly going to be corrupted soon.
 // This function is called for each dangling reference detected.
 // Therefore, after returning from this function, the process will be aborted.
-void dangling_reference_panic(const std::type_info &var_type,
-                              void *var_instance,
-                              const std::stacktrace &var_destruction_stack,
-                              std::size_t dangling_ref_index,
-                              const std::stacktrace &dangling_ref_creation_stack) noexcept;
+using dangling_reference_panic_t = std::function<void(const std::type_info &var_type,
+                                                      void *var_instance,
+                                                      const std::stacktrace &var_destruction_stack,
+                                                      std::size_t dangling_ref_index,
+                                                      const std::stacktrace &dangling_ref_creation_stack)>;
+inline dangling_reference_panic_t dangling_reference_panic;
 
 class tracked_borrow_manager
 {
@@ -162,7 +164,10 @@ class tracked_borrow_manager
             for (auto *current_link = ref_chain_root_; current_link != nullptr; current_link = current_link->next_)
             {
                 const auto &ref_stacktrace = current_link->stacktrace_;
-                dangling_reference_panic(var_type, var_instance, var_destruction_stack, dangling_ref_index, ref_stacktrace);
+                if (dangling_reference_panic)
+                {
+                    dangling_reference_panic(var_type, var_instance, var_destruction_stack, dangling_ref_index, ref_stacktrace);
+                }
                 dangling_ref_index++;
             }
 

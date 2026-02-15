@@ -41,7 +41,7 @@ class shared_recursive_mutex
         auto lock = acquire_internal_mutex();
         auto is_mutex_free = unregister_unique_count();
         lock.unlock();
-        // Notify all, because there can be shared and other unique sentinels waiting
+        // Notify all, because there can be shared and other unique guards waiting
         notify_mutex_free_condition(true);
     }
 
@@ -62,8 +62,8 @@ class shared_recursive_mutex
         auto lock = acquire_internal_mutex();
         const auto is_mutex_free = unregister_shared_count();
         lock.unlock();
-        // Notify only one, because shared sentinels are not waiting. They can just acquire the lock immediately.
-        // There can be though multiple unique sentinels waiting, but only one of them can acquire the lock.
+        // Notify only one, because shared guards are not waiting. They can just acquire the lock immediately.
+        // There can be though multiple unique guards waiting, but only one of them can acquire the lock.
         notify_mutex_free_condition(false);
     }
 

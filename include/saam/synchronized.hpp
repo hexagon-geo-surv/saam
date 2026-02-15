@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include <saam/guard.hpp>
 #include <saam/safe_ref.hpp>
-#include <saam/sentinel.hpp>
 #include <saam/shared_recursive_mutex.hpp>
 
 #include <chrono>
@@ -38,12 +38,12 @@ class synchronized
         };
 
         template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
-        wait_result wait(sentinel<T> &sentinel,
+        wait_result wait(guard<T> &guard,
                          std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
                              std::nullopt);
 
         template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
-        wait_result wait(sentinel<const T> &sentinel,
+        wait_result wait(guard<const T> &guard,
                          std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
                              std::nullopt);
 
@@ -91,11 +91,29 @@ class synchronized
     template <typename TOther>
     synchronized &use_mutex_of(ref<synchronized<TOther>> other);
 
-    // Mutable borrow
-    [[nodiscard]] sentinel<T> lock_mut() const;
+    // Mutable unique lock
+    [[nodiscard]] guard<T> commence_mut() const;
 
-    // Immutable borrow
-    [[nodiscard]] sentinel<const T> lock() const;
+    // Immutable shared lock
+    [[nodiscard]] guard<const T> commence() const;
+
+    // In-place re-construction of the underlying type - internally uses the mutable guard
+    template <typename... Args>
+    synchronized &emplace(Args &&...args);
+
+    // During the access to the underlying object, there must be a temporary smart reference. The lifetime of the temporary smart reference
+    // starts before the operator-> is called and ends well after the call is completed. Without this, we use the underlying object without
+    // administrating it in the borrow manager and a parallel destruction of the var would NOT consider this access for the final reference
+    // check. The first operator-> provides a temporary smart reference. Then the call into the underlying object is done via the smart
+    // reference's operator->. The two operators-> are collapsed into one operator-> by the C++ compiler.
+    [[nodiscard]] guard<T> operator->() const noexcept;
+
+    // Assignment from underlying type - internally uses the mutable guard
+    synchronized &operator=(const T &instance) noexcept;
+    synchronized &operator=(T &&instance) noexcept;
+
+    // No direct casting to raw reference is allowed
+    [[nodiscard]] operator T &() const = delete;
 
   private:
     template <typename TOther>
@@ -103,7 +121,7 @@ class synchronized
     friend class synchronized;
 
     template <typename TOther>
-    friend class sentinel;
+    friend class guard;
 
     var<shared_recursive_mutex> mutex_;
     ref<shared_recursive_mutex> active_mutex_{mutex_};

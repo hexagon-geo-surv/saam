@@ -205,13 +205,9 @@ When a `saam::ref` outlives its associated `saam::var`, a panic is triggered.
 Define the following global function, in order to be able to create a report about the panic.
 
 ``` c++
-namespace saam
-{
-void dangling_reference_panic(const std::type_info &var_type, void *var_instance, std::size_t num_dangling_references) noexcept
-{
+saam::dangling_reference_panic = [](const std::type_info &var_type, void *var_instance, std::size_t num_dangling_references){
     // Dump the panic state
-}
-}
+};
 ```
 
 This managed mode reliably detects the dangling reference situation, but does not provide info about the dangling reference instances.
@@ -219,20 +215,16 @@ This managed mode reliably detects the dangling reference situation, but does no
 #### Tracked
 When a dangling reference situation is detected, the `saam` library can identify the `saam::ref` instances that are dangling and the `saam::var` they belonged to. The fault report includes the call stack where the `saam::var` was destroyed and the creation stack(s) of the dangling `saam::ref` instance(s). This mode requires C++23 with stacktrace support.
 
-Define the following function, in order to be able to create a report about the panic. This function is called for each dangling `saam::ref` on the `saam::var` that triggered the panic.
+Define the following global function, in order to be able to create a report about the panic. This function is called for each dangling `saam::ref` on the `saam::var` that triggered the panic.
 
 ``` c++
-namespace saam
-{
-void dangling_reference_panic(const std::type_info &var_type,
+saam::dangling_reference_panic = [](const std::type_info &var_type,
                               void *var_instance,
                               const std::stacktrace &var_destruction_stack,
                               std::size_t dangling_ref_index,
-                              const std::stacktrace &dangling_ref_creation_stack) noexcept
-{
+                              const std::stacktrace &dangling_ref_creation_stack){
     // Dump the panic state
-}
-}
+};
 ```
 
 #### Unchecked

@@ -38,7 +38,7 @@ synchronized<T>::synchronized(T &&instance) :
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T>::synchronized(const synchronized &other) :
-    protected_instance_(*other.lock())
+    protected_instance_(*other.commence())
 {
     // Just take the other instance, synchronizedes of "this" and "other" are independent
 }
@@ -46,7 +46,7 @@ synchronized<T>::synchronized(const synchronized &other) :
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T>::synchronized(synchronized &&other) noexcept :
-    protected_instance_(std::move(*other.lock_mut()))
+    protected_instance_(std::move(*other.commence_mut()))
 {
     // Just take the other instance, synchronizedes of "this" and "other" are independent
 }
@@ -99,17 +99,53 @@ synchronized<T> &synchronized<T>::use_mutex_of(ref<synchronized<TOther>> other)
 
 template <typename T>
     requires(!std::is_const_v<T>)
-sentinel<T> synchronized<T>::lock_mut() const
+guard<T> synchronized<T>::commence_mut() const
 {
-    return sentinel<T>(*this);
+    return guard<T>(*this);
 }
 
 template <typename T>
     requires(!std::is_const_v<T>)
-sentinel<const T> synchronized<T>::lock() const
+guard<const T> synchronized<T>::commence() const
 {
-    return sentinel<const T>(*this);
+    return guard<const T>(*this);
 }
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+template <typename... Args>
+synchronized<T> &synchronized<T>::emplace(Args &&...args)
+{
+    *commence_mut() = T(std::forward<Args>(args)...);
+    return *this;
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+[[nodiscard]] guard<T> synchronized<T>::operator->() const noexcept
+{
+    return guard<T>(*this);
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+synchronized<T> &synchronized<T>::operator=(const T &instance) noexcept
+{
+    *commence_mut() = instance;
+    return *this;
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+synchronized<T> &synchronized<T>::operator=(T &&instance) noexcept
+{
+    *commence_mut() = std::move(instance);
+    return *this;
+}
+
+//
+// Condition class implementation
+//
 
 template <typename T>
     requires(!std::is_const_v<T>)
@@ -123,30 +159,30 @@ template <typename T>
     requires(!std::is_const_v<T>)
 template <typename TClock, typename TDuration>
 typename synchronized<T>::condition::wait_result synchronized<T>::condition::wait(
-    sentinel<T> &sentinel, std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout)
+    guard<T> &guard, std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout)
 {
-    assert(!sentinel.mutex_.is_moved_from());
-    // Ensure that the condition is related to the sentinel
-    assert(sentinel.protected_instance_ == protected_instance_);
+    assert(!guard.mutex_.is_moved_from());
+    // Ensure that the condition is related to the guard
+    assert(guard.protected_instance_ == protected_instance_);
 
-    auto internal_mutex_lock{sentinel.mutex_->acquire_internal_mutex()};
+    auto internal_mutex_lock{guard.mutex_->acquire_internal_mutex()};
 
     // Can't go sleep with holding the lock count, otherwise others cannot change the state of the synchronized instance
-    (void)sentinel.mutex_->unregister_unique_count();
-    // Do not notify yet the threads that are waiting to acquire a sentinel.
+    (void)guard.mutex_->unregister_unique_count();
+    // Do not notify yet the threads that are waiting to acquire a guard.
     // Delay it until the waiting predicate is called the first time.
 
     const auto waiting_predicate = [&]() {
-        sentinel.mutex_->register_unique_count(internal_mutex_lock);
-        const bool criteria_met = fulfillment_criteria_(*sentinel);
+        guard.mutex_->register_unique_count(internal_mutex_lock);
+        const bool criteria_met = fulfillment_criteria_(*guard);
         if (!criteria_met)
         {
-            auto no_lock_counts = sentinel.mutex_->unregister_unique_count();
+            auto no_lock_counts = guard.mutex_->unregister_unique_count();
             if (no_lock_counts)
             {
                 // Even though the internal mutex is still locked here, this is the last chance for the notification
                 // before going to sleep.
-                sentinel.mutex_->notify_mutex_free_condition(true);
+                guard.mutex_->notify_mutex_free_condition(true);
             }
         }
         return criteria_met;
@@ -183,30 +219,30 @@ template <typename T>
     requires(!std::is_const_v<T>)
 template <typename TClock, typename TDuration>
 typename synchronized<T>::condition::wait_result synchronized<T>::condition::wait(
-    sentinel<const T> &sentinel, std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout)
+    guard<const T> &guard, std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout)
 {
-    assert(!sentinel.mutex_.is_moved_from());
-    // Ensure that the condition is related to the sentinel
-    assert(sentinel.protected_instance_ == protected_instance_);
+    assert(!guard.mutex_.is_moved_from());
+    // Ensure that the condition is related to the guard
+    assert(guard.protected_instance_ == protected_instance_);
 
-    auto internal_mutex_lock{sentinel.mutex_->acquire_internal_mutex()};
+    auto internal_mutex_lock{guard.mutex_->acquire_internal_mutex()};
 
     // Can't go sleep with holding the lock count, otherwise others cannot change the state of the synchronized instance
-    (void)sentinel.mutex_->unregister_shared_count();
-    // Do not notify yet the threads that are waiting to acquire a sentinel.
+    (void)guard.mutex_->unregister_shared_count();
+    // Do not notify yet the threads that are waiting to acquire a guard.
     // Delay it until the waiting predicate is called the first time.
 
     const auto waiting_predicate = [&]() {
-        sentinel.mutex_->register_shared_count(internal_mutex_lock);
-        const bool criteria_met = fulfillment_criteria_(*sentinel);
+        guard.mutex_->register_shared_count(internal_mutex_lock);
+        const bool criteria_met = fulfillment_criteria_(*guard);
         if (!criteria_met)
         {
-            auto no_lock_counts = sentinel.mutex_->unregister_shared_count();
+            auto no_lock_counts = guard.mutex_->unregister_shared_count();
             if (no_lock_counts)
             {
                 // Even though the internal mutex is still locked here, this is the last chance for the notification
                 // before going to sleep.
-                sentinel.mutex_->notify_mutex_free_condition(true);
+                guard.mutex_->notify_mutex_free_condition(true);
             }
         }
         return criteria_met;

@@ -79,7 +79,7 @@ class best_practice : public base_a, public base_b
     // The smart mutex is not movable (because the STL mutex is also not movable)
     // Move only the "members" from the other instance under the control of "this" smart mutex.
     best_practice(best_practice &&other) noexcept :
-        synced_m_(std::move(*other.synced_m_.lock_mut()))  // Locked "other" prevents modifications in "other" during the move operation
+        synced_m_(std::move(*other.synced_m_.commence_mut()))  // Locked "other" prevents modifications in "other" during the move operation
     {
     }
 
@@ -87,8 +87,8 @@ class best_practice : public base_a, public base_b
     {
         assert(self_.has_value());
         // Capturing the smart reference into the callback ensures a valid call destination.
-        // The access to "data" is done via a temporal sentinel, but the locking is only temporal.
-        auto external_callback = [self = *self_](int data_query) { return data_query == self->synced_m_.lock()->data; };
+        // The access to "data" is done via a temporal guard, but the locking is only temporal.
+        auto external_callback = [self = *self_](int data_query) { return data_query == self->synced_m_.commence()->data; };
         return external_callback;
     }
 
