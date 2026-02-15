@@ -56,7 +56,7 @@ The `blindfold` is a RAII object that temporarily unlocks the mutex.
 ```cpp
 saam::guard<const int> number_immut_guard{number};
 
-// As long as the blindfold is alive, the guard the lock is free. As soon as the blindfold
+// As long as the blindfold is alive, the guard's lock is free. As soon as the blindfold
 // is released the guard is on duty again.
 {
     saam::guard<const int>::blindfold number_immut_guard_blindfold{number_immut_guard};
