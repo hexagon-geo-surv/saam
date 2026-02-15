@@ -48,6 +48,17 @@ auto number_immut_guard{number.commence()};
 The `synchronized` instance and its related `guard` instances are bound via smart references. If the
 `synchronized` object is destroyed before all its `guard`s are released, `saam` will panic.
 
+When multiple `synchronized` instances shall be guarded at the same time, use the `commence_all` function.
+The template parameter list specifies if the commenced guards shall be mutable or immutable.
+Using this function prevents deadlocks when trying to acquire multiple guards.
+
+```cpp
+saam::synchronized<std::string> text("Hello world");
+saam::synchronized<int> number(42);
+
+auto [text_guard, number_guard] = commence_all<const std::string, int>(text, number);
+```
+
 ### Guard blindfolding
 
 Sometimes it is necessary to suspend the watch of a guard for some time. This is done by blindfolding the guard.
