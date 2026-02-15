@@ -54,16 +54,16 @@ Sometimes it is necessary to suspend the watch of a guard for some time. This is
 The `blindfold` is a RAII object that temporarily unlocks the mutex.
 
 ```cpp
-saam::guard<const int> number_immut_guard{number};
+saam::guard<int> number_guard{number};
 
 // As long as the blindfold is alive, the guard's lock is free. As soon as the blindfold
 // is released the guard is on duty again.
 {
-    saam::guard<const int>::blindfold number_immut_guard_blindfold{number_immut_guard};
-    *number_immut_guard = 5; // Using a blindfolded guard results in a moved-from saam::ref access - the process crashes.
+    saam::guard<int>::blindfold number_guard_blindfold{number_guard};
+    *number_guard = 5; // Using a blindfolded guard results in a moved-from saam::ref access - the process crashes.
 }
 
-*number_immut_guard = 5; // Blindfold is gone, the lock is alive, the guard is usable again.
+*number_guard = 5; // Blindfold is gone, the lock is alive, the guard is usable again.
 ```
 
 ## Condition variables
