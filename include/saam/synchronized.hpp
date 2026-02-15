@@ -101,7 +101,7 @@ class synchronized
     template <typename... Args>
     synchronized &emplace(Args &&...args);
 
-    // During the access to the undelying object, there must be a temporary smart reference. The lifetime of the temporary smart reference
+    // During the access to the underlying object, there must be a temporary smart reference. The lifetime of the temporary smart reference
     // starts before the operator-> is called and ends well after the call is completed. Without this, we use the underlying object without
     // administrating it in the borrow manager and a parallel destruction of the var would NOT consider this access for the final reference
     // check. The first operator-> provides a temporary smart reference. Then the call into the underlying object is done via the smart
