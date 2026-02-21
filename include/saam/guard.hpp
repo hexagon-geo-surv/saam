@@ -153,12 +153,19 @@ class guard
     template <typename TOther>
     friend class guard;
 
+    template <typename TOther>
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+    guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
+
     void lock() noexcept;
     void unlock() noexcept;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;
     ref<shared_recursive_mutex> mutex_;
+
+    template <typename... TOther>
+    friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
 };
 
 // The underlying lock is a shared lock for const access, so a separate implementation is needed.
@@ -324,12 +331,19 @@ class guard<const T>
     template <typename TOther>
     friend class guard;
 
+    template <typename TOther>
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+    guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
+
     void lock() noexcept;
     void unlock() noexcept;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<const T> protected_instance_;
     ref<shared_recursive_mutex> mutex_;
+
+    template <typename... TOther>
+    friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
 };
 
 }  // namespace saam
