@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <saam/safe_ref.hpp>
 #include <saam/guard.hpp>
+#include <saam/safe_ref.hpp>
 
 #include <cassert>
 
@@ -164,6 +164,16 @@ template <typename T>
 guard<T>::operator T *() const noexcept
 {
     return static_cast<T *>(protected_instance_);
+}
+
+template <typename T>
+template <typename TOther>
+    requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+guard<T>::guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept :
+    protected_instance_(std::move(protected_instance)),
+    mutex_(std::move(mutex))
+{
+    // The mutex is expected to be already locked
 }
 
 //
@@ -376,6 +386,16 @@ template <typename T>
 guard<const T>::operator const T *() const noexcept
 {
     return static_cast<const T *>(protected_instance_);
+}
+
+template <typename T>
+template <typename TOther>
+    requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+guard<const T>::guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept :
+    protected_instance_(std::move(protected_instance)),
+    mutex_(std::move(mutex))
+{
+    // The mutex is expected to be already locked
 }
 
 }  // namespace saam

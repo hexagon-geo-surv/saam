@@ -18,7 +18,6 @@
 
 namespace saam
 {
-
 // Synchronized owns an instance of T and provides a thread-safe way to access it.
 // The lifetime of T is bound to the lifetime of the synchronized.
 template <typename T>
@@ -26,6 +25,7 @@ template <typename T>
 class synchronized
 {
   public:
+    using data_type_t = T;
     class condition
     {
       public:
@@ -129,7 +129,59 @@ class synchronized
     // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
     // This case shall trigger a panic.
     var<T> protected_instance_;
+
+    template <typename... TOther>
+    friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
 };
+
+template <typename... T>
+auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
+{
+    while (true)
+    {
+        {
+            // Try acquiring all locks without blocking.
+            bool all_guards_acquired = true;
+            auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
+                const auto locked = std::is_const_v<T> ? sync.active_mutex_->try_lock_shared() : sync.active_mutex_->try_lock();
+                if (locked)
+                {
+                    // Use the guard constructor that assumes the mutex is already locked
+                    // to avoid acquiring the lock a second time.
+                    return guard<T>(ref<T>(sync.protected_instance_), sync.active_mutex_);
+                }
+
+                all_guards_acquired = false;
+                return std::nullopt;
+            }(syncs)...);
+
+            if (all_guards_acquired)
+            {
+                // Strip the std::optional and keep only the guards
+                return std::apply([](auto &&...optionals) { return std::make_tuple(std::move(optionals.value())...); }, maybe_guards);
+            }
+
+            // The guards are not complete (failed to acquire them all), release them all here
+        }
+
+        // Let's probe the locks and wait for the ones, which are not available. This avoids a busy wait retry.
+        // Try to acquire the locks one by one with blocking to see if it is time to try to acquire them all again.
+        // Acquire them only one at a time (do not keep the guard) - so no race condition can happen.
+        // After a probing round, let's try to acquire them all again.
+        (..., [](const auto &sync) {
+            if constexpr (std::is_const_v<T>)
+            {
+                sync.active_mutex_->lock_shared();
+                sync.active_mutex_->unlock_shared();
+            }
+            else
+            {
+                sync.active_mutex_->lock();
+                sync.active_mutex_->unlock();
+            }
+        }(syncs));
+    }
+}
 
 }  // namespace saam
 
