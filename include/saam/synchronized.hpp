@@ -168,7 +168,18 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
         // Try to acquire the locks one by one with blocking to see if it is time to try to acquire them all again.
         // Acquire them only one at a time (do not keep the guard) - so no race condition can happen.
         // After a probing round, let's try to acquire them all again.
-        (..., [](const auto &sync) { std::is_const_v<T> ? sync.active_mutex_->lock_shared() : sync.active_mutex_->lock(); }(syncs));
+        (..., [](const auto &sync) {
+            if (std::is_const_v<T>)
+            {
+                sync.active_mutex_->lock_shared();
+                sync.active_mutex_->unlock_shared();
+            }
+            else
+            {
+                sync.active_mutex_->lock();
+                sync.active_mutex_->unlock();
+            }
+        }(syncs));
     }
 }
 
