@@ -8,12 +8,10 @@
 #include <saam/safe_ref.hpp>
 #include <saam/shared_recursive_mutex.hpp>
 
-#include <algorithm>
 #include <chrono>
 #include <condition_variable>
 #include <functional>
 #include <optional>
-#include <thread>
 #include <type_traits>
 #include <utility>
 #include <variant>
