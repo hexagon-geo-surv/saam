@@ -150,7 +150,7 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
                 {
                     // Use the guard constructor that assumes the mutex is already locked
                     // to avoid acquiring the lock a second time.
-                    return guard<T>(sync.protected_instance_, sync.active_mutex_);
+                    return guard<T>(ref<T>(sync.protected_instance_), sync.active_mutex_);
                 }
 
                 all_guards_acquired = false;
@@ -171,7 +171,7 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
         // Acquire them only one at a time (do not keep the guard) - so no race condition can happen.
         // After a probing round, let's try to acquire them all again.
         (..., [](const auto &sync) {
-            if (std::is_const_v<T>)
+            if constexpr (std::is_const_v<T>)
             {
                 sync.active_mutex_->lock_shared();
                 sync.active_mutex_->unlock_shared();
