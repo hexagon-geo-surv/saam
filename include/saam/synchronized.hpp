@@ -141,25 +141,34 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
 {
     while (true)
     {
-        bool all_guards_acquired = true;
-        auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
-            const auto locked = std::is_const_v<T> ? sync.active_mutex_->try_lock_shared() : sync.active_mutex_->try_lock();
-            if (locked)
+        {
+            // Try acquiring all locks without blocking.
+            bool all_guards_acquired = true;
+            auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
+                const auto locked = std::is_const_v<T> ? sync.active_mutex_->try_lock_shared() : sync.active_mutex_->try_lock();
+                if (locked)
+                {
+                    return guard<T>(sync);
+                }
+
+                all_guards_acquired = false;
+                return std::nullopt;
+            }(syncs)...);
+
+            if (all_guards_acquired)
             {
-                return guard<T>(sync);
+                // Strip the std::optional and keep only the guards
+                return std::apply([](auto &&...optionals) { return std::make_tuple(std::move(optionals.value())...); }, maybe_guards);
             }
 
-            all_guards_acquired = false;
-            return std::nullopt;
-        }(syncs)...);
-
-        if (!all_guards_acquired)
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            continue;
+            // The guards are not complete (failed to acquire them all), release them all here
         }
 
-        return std::apply([](auto &&...optionals) { return std::make_tuple(std::move(*optionals)...); }, maybe_guards);
+        // Let's probe the locks and wait for the ones, which are not available. This avoids a busy wait retry.
+        // Try to acquire the locks one by one with blocking to see if it is time to try to acquire them all again.
+        // Acquire them only one at a time (do not keep the guard) - so no race condition can happen.
+        // After a probing round, let's try to acquire them all again.
+        (..., [](const auto &sync) { std::is_const_v<T> ? sync.active_mutex_->lock_shared() : sync.active_mutex_->lock(); }(syncs));
     }
 }
 

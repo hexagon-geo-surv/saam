@@ -7,7 +7,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <latch>
 #include <string>
+#include <thread>
 #include <utility>
 
 namespace saam::test
@@ -88,6 +91,33 @@ TEST_F(synchronized_test, commence_all)
     ASSERT_EQ(*number_guard, 42);
     *number_guard = 43;
     ASSERT_EQ(*number_guard, 43);
+}
+
+TEST_F(synchronized_test, commence_all_with_retry)
+{
+    saam::synchronized<std::string> text("Hello world");
+    saam::synchronized<int> number(42);
+
+    const auto acquisition_delay = std::chrono::milliseconds(100);
+
+    // This thread holds the mutex for a while, so the main thread acquisition does not succeed for the first time.
+    std::latch other_thread_started(1);
+    std::thread other_thread([&]() {
+        other_thread_started.count_down();
+        auto text_guard = text.commence_mut();
+        std::this_thread::sleep_for(acquisition_delay);
+    });
+
+    other_thread_started.wait();
+
+    auto before = std::chrono::steady_clock::now();
+    auto [text_guard, number_guard] = commence_all<const std::string, int>(text, number);
+    auto after = std::chrono::steady_clock::now();
+
+    auto acquisition_duration = std::chrono::duration_cast<std::chrono::milliseconds>(after - before);
+    ASSERT_GE(acquisition_duration, acquisition_delay);
+
+    other_thread.join();
 }
 
 }  // namespace saam::test
