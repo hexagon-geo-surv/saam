@@ -148,7 +148,9 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
                 const auto locked = std::is_const_v<T> ? sync.active_mutex_->try_lock_shared() : sync.active_mutex_->try_lock();
                 if (locked)
                 {
-                    return guard<T>(sync);
+                    // Use the guard constructor that assumes the mutex is already locked
+                    // to avoid acquiring the lock a second time.
+                    return guard<T>(sync.protected_instance_, sync.active_mutex_);
                 }
 
                 all_guards_acquired = false;
