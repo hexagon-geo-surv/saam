@@ -6,15 +6,12 @@
 
 #include <saam/guard.hpp>
 #include <saam/safe_ref.hpp>
-#include <saam/shared_recursive_mutex.hpp>
 
-#include <chrono>
-#include <condition_variable>
-#include <functional>
 #include <optional>
+#include <shared_mutex>
+#include <tuple>
 #include <type_traits>
 #include <utility>
-#include <variant>
 
 namespace saam
 {
@@ -25,36 +22,8 @@ template <typename T>
 class synchronized
 {
   public:
+    using mutex_t = std::shared_mutex;
     using data_type_t = T;
-    class condition
-    {
-      public:
-        condition(const synchronized &synched, std::function<bool(const T &)> fulfillment_criteria);
-
-        enum class wait_result : std::uint8_t
-        {
-            criteria_met,
-            timeout
-        };
-
-        template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
-        wait_result wait(guard<T> &guard,
-                         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
-                             std::nullopt);
-
-        template <typename TClock = std::chrono::system_clock, typename TDuration = std::chrono::milliseconds>
-        wait_result wait(guard<const T> &guard,
-                         std::optional<std::variant<std::chrono::milliseconds, std::chrono::time_point<TClock, TDuration>>> maybe_timeout =
-                             std::nullopt);
-
-        void notify_one();
-        void notify_all();
-
-      private:
-        saam::ref<T> protected_instance_;
-        std::condition_variable condition_variable_;
-        std::function<bool(const T &)> fulfillment_criteria_;
-    };
 
     synchronized();
 
@@ -123,8 +92,8 @@ class synchronized
     template <typename TOther>
     friend class guard;
 
-    var<shared_recursive_mutex> mutex_;
-    ref<shared_recursive_mutex> active_mutex_{mutex_};
+    var<mutex_t> mutex_;
+    ref<mutex_t> active_mutex_{mutex_};
 
     // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
     // This case shall trigger a panic.

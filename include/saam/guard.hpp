@@ -5,7 +5,8 @@
 #pragma once
 
 #include <saam/safe_ref.hpp>
-#include <saam/shared_recursive_mutex.hpp>
+
+#include <shared_mutex>
 
 namespace saam
 {
@@ -21,6 +22,7 @@ template <typename T>
 class guard
 {
   public:
+    using mutex_t = std::shared_mutex;
     using value_t = T;
 
     class blindfold
@@ -155,14 +157,14 @@ class guard
 
     template <typename TOther>
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-    guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
+    guard(ref<TOther> protected_instance, ref<mutex_t> mutex) noexcept;
 
     void lock() noexcept;
     void unlock() noexcept;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;
-    ref<shared_recursive_mutex> mutex_;
+    ref<mutex_t> mutex_;
 
     template <typename... TOther>
     friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
@@ -173,6 +175,7 @@ template <typename T>
 class guard<const T>
 {
   public:
+    using mutex_t = std::shared_mutex;
     using value_t = const T;
 
     class blindfold
@@ -333,14 +336,14 @@ class guard<const T>
 
     template <typename TOther>
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-    guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
+    guard(ref<const TOther> protected_instance, ref<mutex_t> mutex) noexcept;
 
     void lock() noexcept;
     void unlock() noexcept;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<const T> protected_instance_;
-    ref<shared_recursive_mutex> mutex_;
+    ref<mutex_t> mutex_;
 
     template <typename... TOther>
     friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);

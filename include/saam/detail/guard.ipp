@@ -169,7 +169,7 @@ guard<T>::operator T *() const noexcept
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-guard<T>::guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept :
+guard<T>::guard(ref<TOther> protected_instance, ref<mutex_t> mutex) noexcept :
     protected_instance_(std::move(protected_instance)),
     mutex_(std::move(mutex))
 {
@@ -391,7 +391,7 @@ guard<const T>::operator const T *() const noexcept
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-guard<const T>::guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept :
+guard<const T>::guard(ref<const TOther> protected_instance, ref<mutex_t> mutex) noexcept :
     protected_instance_(std::move(protected_instance)),
     mutex_(std::move(mutex))
 {
