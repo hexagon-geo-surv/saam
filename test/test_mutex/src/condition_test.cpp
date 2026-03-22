@@ -9,6 +9,7 @@
 
 #include <thread>
 #include <condition_variable>
+#include <chrono>
 
 namespace saam::test
 {
