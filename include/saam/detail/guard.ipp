@@ -21,19 +21,15 @@ template <typename TOther>
     requires std::is_convertible_v<TOther *, T *>
 guard<T>::guard(guard<TOther> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
-    mutex_(std::move(other.mutex_))
+    lock_(std::move(other.lock_))
 {
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
 }
 
 template <typename T>
 guard<T>::guard(guard<T> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
-    mutex_(std::move(other.mutex_))
+    lock_(std::move(other.lock_))
 {
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
 }
 
 template <typename T>
@@ -41,9 +37,8 @@ template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
 guard<T>::guard(const synchronized<TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
-    mutex_(other.active_mutex_)
+    lock_(*other.active_mutex_)
 {
-    lock();
 }
 
 template <typename T>
@@ -56,13 +51,11 @@ guard<T> &guard<T>::operator=(guard<TOther> &&other) noexcept
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = std::move(other.protected_instance_);
-    mutex_ = std::move(other.mutex_);
-
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
+    lock_ = std::move(other.lock_);
 
     return *this;
 }
@@ -75,13 +68,11 @@ guard<T> &guard<T>::operator=(guard<T> &&other) noexcept
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = std::move(other.protected_instance_);
-    mutex_ = std::move(other.mutex_);
-
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
+    lock_ = std::move(other.lock_);
 
     return *this;
 }
@@ -96,50 +87,13 @@ guard<T> &guard<T>::operator=(const synchronized<TOther> &other) noexcept
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = other.protected_instance_;
-    mutex_ = other.active_mutex_;
-
-    lock();
+    lock_ = lock_t(*other.active_mutex_);
 
     return *this;
-}
-
-template <typename T>
-guard<T>::~guard()
-{
-    unlock();
-}
-
-template <typename T>
-void guard<T>::lock() noexcept
-{
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->lock();
-    }
-}
-
-template <typename T>
-void guard<T>::unlock() noexcept
-{
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock();
-    }
-}
-
-template <typename T>
-bool guard<T>::operator==(const guard &other) const noexcept
-{
-    return protected_instance_ == other.protected_instance_;
-}
-
-template <typename T>
-bool guard<T>::operator!=(const guard &other) const noexcept
-{
-    return !(*this == other);
 }
 
 template <typename T>
@@ -169,9 +123,9 @@ guard<T>::operator T *() const noexcept
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-guard<T>::guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept :
+guard<T>::guard(ref<TOther> protected_instance, lock_t lock) noexcept :
     protected_instance_(std::move(protected_instance)),
-    mutex_(std::move(mutex))
+    lock_(std::move(lock))
 {
     // The mutex is expected to be already locked
 }
@@ -184,18 +138,22 @@ template <typename T>
 template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
 guard<const T>::guard(const guard<const TOther> &other) noexcept :
-    protected_instance_(other.protected_instance_),
-    mutex_(other.mutex_)
+    protected_instance_(other.protected_instance_)
 {
-    lock();
+    if (other.lock_.mutex() != nullptr)
+    {
+        lock_ = lock_t(*other.lock_.mutex());
+    }
 }
 
 template <typename T>
 guard<const T>::guard(const guard<const T> &other) noexcept :
-    protected_instance_(other.protected_instance_),
-    mutex_(other.mutex_)
+    protected_instance_(other.protected_instance_)
 {
-    lock();
+    if (other.lock_.mutex() != nullptr)
+    {
+        lock_ = lock_t(*other.lock_.mutex());
+    }
 }
 
 template <typename T>
@@ -203,19 +161,15 @@ template <typename TOther>
     requires std::is_convertible_v<TOther *, const T *>
 guard<const T>::guard(guard<const TOther> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
-    mutex_(std::move(other.mutex_))
+    lock_(std::move(other.lock_))
 {
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
 }
 
 template <typename T>
 guard<const T>::guard(guard<const T> &&other) noexcept :
     protected_instance_(std::move(other.protected_instance_)),
-    mutex_(std::move(other.mutex_))
+    lock_(std::move(other.lock_))
 {
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
 }
 
 template <typename T>
@@ -223,10 +177,8 @@ template <typename TOther>
     requires(std::is_convertible_v<TOther *, const T *> && !std::is_const_v<TOther>)
 guard<const T>::guard(const synchronized<TOther> &other) noexcept :
     protected_instance_(other.protected_instance_),
-    mutex_(other.mutex_)
+    lock_(*other.active_mutex_)
 {
-    // The mutex reference in a synchronized is always valid, can be locked without any check
-    lock();
 }
 
 template <typename T>
@@ -239,12 +191,11 @@ guard<const T> &guard<const T>::operator=(const guard<const TOther> &other)
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = other.protected_instance_;
-    mutex_ = other.mutex_;
-
-    lock();
+    lock_ = lock_t(*other.lock_.mutex());
 
     return *this;
 }
@@ -257,12 +208,11 @@ guard<const T> &guard<const T>::operator=(const guard<const T> &other)
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = other.protected_instance_;
-    mutex_ = other.mutex_;
-
-    lock();
+    lock_ = lock_t(*other.lock_.mutex());
 
     return *this;
 }
@@ -277,13 +227,11 @@ guard<const T> &guard<const T>::operator=(guard<const TOther> &&other) noexcept
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = std::move(other.protected_instance_);
-    mutex_ = std::move(other.mutex_);
-
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
+    lock_ = std::move(other.lock_);
 
     return *this;
 }
@@ -296,13 +244,11 @@ guard<const T> &guard<const T>::operator=(guard<const T> &&other) noexcept
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = std::move(other.protected_instance_);
-    mutex_ = std::move(other.mutex_);
-
-    // The locked state was taken from the other instance - if there was any and the other instance was not moved-from
-    // The other instance is now in a moved-from state, will not release the lock
+    lock_ = std::move(other.lock_);
 
     return *this;
 }
@@ -317,39 +263,13 @@ guard<const T> &guard<const T>::operator=(const synchronized<TOther> &other) noe
         return *this;
     }
 
-    unlock();
+    // Guard cannot is always associated with a mutex
+    assert(other.active_mutex_ != nullptr);
 
     protected_instance_ = other.protected_instance_;
-    mutex_ = other.active_mutex_;
-
-    // The mutex reference in a synchronized is always valid, can be locked without any check
-    lock();
+    lock_ = lock_t{*other.active_mutex_};
 
     return *this;
-}
-
-template <typename T>
-guard<const T>::~guard()
-{
-    unlock();
-}
-
-template <typename T>
-void guard<const T>::lock() noexcept
-{
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->lock_shared();
-    }
-}
-
-template <typename T>
-void guard<const T>::unlock() noexcept
-{
-    if (!mutex_.is_moved_from())
-    {
-        mutex_->unlock_shared();
-    }
 }
 
 template <typename T>
@@ -391,11 +311,10 @@ guard<const T>::operator const T *() const noexcept
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-guard<const T>::guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept :
+guard<const T>::guard(ref<const TOther> protected_instance, lock_t lock) noexcept :
     protected_instance_(std::move(protected_instance)),
-    mutex_(std::move(mutex))
+    lock_(std::move(lock))
 {
-    // The mutex is expected to be already locked
 }
 
 }  // namespace saam

@@ -7,16 +7,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <chrono>
+#include <condition_variable>
 #include <thread>
 
 namespace saam::test
 {
 
-TEST(condition_test, wait_on_condition)
-
+TEST(condition_test, wait_on_condition_shared_lock)
 {
     saam::synchronized<int> synced_m(5);
-    saam::synchronized<int>::condition above_5_condition(synced_m, [](const int &val) { return val > 5; });
+    std::condition_variable_any above_5_condition;
     bool stop_thread = false;
 
     std::thread thread_worker([&]() {
@@ -33,8 +34,37 @@ TEST(condition_test, wait_on_condition)
 
     {
         auto guard = synced_m.commence();
-        above_5_condition.wait(guard);
+        above_5_condition.wait(guard.get_lock(), [&guard]() { return *guard > 5; });
         ASSERT_GT(*guard, 5);
+    }
+
+    stop_thread = true;
+    thread_worker.join();
+}
+
+TEST(condition_test, wait_on_condition_unique_lock)
+{
+    saam::synchronized<int> synced_m(5);
+    std::condition_variable_any above_5_condition;
+    bool stop_thread = false;
+
+    std::thread thread_worker([&]() {
+        for (; !stop_thread;)
+        {
+            {
+                auto locked_m = synced_m.commence_mut();
+                (*locked_m)++;
+            }
+            above_5_condition.notify_all();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    });
+
+    {
+        auto guard = synced_m.commence_mut();
+        above_5_condition.wait(guard.get_lock(), [&guard]() { return *guard > 5; });
+        *guard = -*guard;
+        ASSERT_LT(*guard, -5);
     }
 
     stop_thread = true;

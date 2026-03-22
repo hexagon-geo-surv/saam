@@ -5,7 +5,9 @@
 #pragma once
 
 #include <saam/safe_ref.hpp>
-#include <saam/shared_recursive_mutex.hpp>
+
+#include <mutex>
+#include <shared_mutex>
 
 namespace saam
 {
@@ -21,64 +23,8 @@ template <typename T>
 class guard
 {
   public:
+    using lock_t = std::unique_lock<std::shared_mutex>;
     using value_t = T;
-
-    class blindfold
-    {
-      public:
-        explicit blindfold(guard &guard) :
-            original_guard_(&guard),
-            unlocked_guard_(std::move([](auto &&sent) {
-                sent.unlock();
-                return std::forward<decltype(sent)>(sent);
-            }(std::move(guard))))
-        {
-        }
-
-        blindfold(const blindfold &other) = delete;
-        blindfold(blindfold &&other) :
-            original_guard_(other.original_guard_),
-            unlocked_guard_(std::move(other.unlocked_guard_))
-        {
-            other.original_guard_ = nullptr;
-        }
-
-        blindfold &operator=(const blindfold &other) = delete;
-        blindfold &operator=(blindfold &&other)
-        {
-            if (this == &other)
-            {
-                return *this;
-            }
-
-            unblind_original_guard();
-
-            original_guard_ = other.original_guard_;
-            unlocked_guard_ = std::move(other.unlocked_guard_);
-            other.original_guard_ = nullptr;
-
-            return *this;
-        }
-
-        ~blindfold()
-        {
-            unblind_original_guard();
-        }
-
-      private:
-        void unblind_original_guard()
-        {
-            if (original_guard_ != nullptr)
-            {
-                *original_guard_ = std::move(unlocked_guard_);
-                original_guard_->lock();
-                original_guard_ = nullptr;
-            }
-        }
-
-        guard *original_guard_;
-        guard unlocked_guard_;
-    };
 
     // Unique guard is unique, after the copy we would have two unique guards, which is not unique anymore
     guard(const guard<T> &other) = delete;
@@ -127,11 +73,22 @@ class guard
         requires std::is_convertible_v<TOther *, T *>
     guard &operator=(const synchronized<TOther> &other) noexcept;
 
-    ~guard();
+    ~guard() = default;
 
     // Equality of guards, not the underlying objects --> similar to smart pointers
-    [[nodiscard]] bool operator==(const guard &other) const noexcept;
-    [[nodiscard]] bool operator!=(const guard &other) const noexcept;
+    // As the guard is unique, there cannot be two guards to the same synchronized instance.
+    [[nodiscard]] bool operator==(const guard &other) const noexcept = delete;
+    [[nodiscard]] bool operator!=(const guard &other) const noexcept = delete;
+
+    lock_t &get_lock() noexcept
+    {
+        return lock_;
+    }
+
+    const lock_t &get_lock() const noexcept
+    {
+        return lock_;
+    }
 
     // Arrow operator
     [[nodiscard]] T *operator->() const;
@@ -155,14 +112,11 @@ class guard
 
     template <typename TOther>
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-    guard(ref<TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
-
-    void lock() noexcept;
-    void unlock() noexcept;
+    guard(ref<TOther> protected_instance, lock_t lock) noexcept;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;
-    ref<shared_recursive_mutex> mutex_;
+    lock_t lock_;
 
     template <typename... TOther>
     friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
@@ -173,64 +127,8 @@ template <typename T>
 class guard<const T>
 {
   public:
+    using lock_t = std::shared_lock<std::shared_mutex>;
     using value_t = const T;
-
-    class blindfold
-    {
-      public:
-        explicit blindfold(guard &guard) :
-            original_guard_(&guard),
-            unlocked_guard_(std::move([](auto &&sent) {
-                sent.unlock();
-                return std::forward<decltype(sent)>(sent);
-            }(std::move(guard))))
-        {
-        }
-
-        blindfold(const blindfold &other) = delete;
-        blindfold(blindfold &&other) :
-            original_guard_(other.original_guard_),
-            unlocked_guard_(std::move(other.unlocked_guard_))
-        {
-            other.original_guard_ = nullptr;
-        }
-
-        blindfold &operator=(const blindfold &other) = delete;
-        blindfold &operator=(blindfold &&other)
-        {
-            if (this == &other)
-            {
-                return *this;
-            }
-
-            unblind_original_guard();
-
-            original_guard_ = other.original_guard_;
-            unlocked_guard_ = std::move(other.unlocked_guard_);
-            other.original_guard_ = nullptr;
-
-            return *this;
-        }
-
-        ~blindfold()
-        {
-            unblind_original_guard();
-        }
-
-      private:
-        void unblind_original_guard()
-        {
-            if (original_guard_ != nullptr)
-            {
-                *original_guard_ = std::move(unlocked_guard_);
-                original_guard_->lock();
-                original_guard_ = nullptr;
-            }
-        }
-
-        guard *original_guard_;
-        guard unlocked_guard_;
-    };
 
     // Conversion copy constructor
     template <typename TOther>
@@ -304,12 +202,22 @@ class guard<const T>
         requires std::is_convertible_v<TOther *, const T *>
     guard &operator=(const synchronized<TOther> &other) noexcept;
 
-    ~guard();
+    ~guard() = default;
 
     // Equality of guards, not the underlying objects --> similar to smart pointers
     [[nodiscard]] bool operator==(const guard &other) const noexcept;
 
     [[nodiscard]] bool operator!=(const guard &other) const noexcept;
+
+    lock_t &get_lock() noexcept
+    {
+        return lock_;
+    }
+
+    const lock_t &get_lock() const noexcept
+    {
+        return lock_;
+    }
 
     // Arrow operator
     [[nodiscard]] const T *operator->() const;
@@ -333,14 +241,11 @@ class guard<const T>
 
     template <typename TOther>
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-    guard(ref<const TOther> protected_instance, ref<shared_recursive_mutex> mutex) noexcept;
-
-    void lock() noexcept;
-    void unlock() noexcept;
+    guard(ref<const TOther> protected_instance, lock_t lock) noexcept;
 
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<const T> protected_instance_;
-    ref<shared_recursive_mutex> mutex_;
+    lock_t lock_;
 
     template <typename... TOther>
     friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);

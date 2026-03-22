@@ -13,29 +13,8 @@
 
 namespace saam::test
 {
-class base_a
-{
-  public:
-    void post_constructor(saam::ref<base_a> self)
-    {
-    }
 
-  private:
-    int num_{0};
-};
-
-class base_b
-{
-  public:
-    void post_constructor(saam::ref<base_b> self)
-    {
-    }
-
-  private:
-    double flnum_{0.0};
-};
-
-class best_practice : public base_a, public base_b
+class best_practice
 {
     // Data members of the class are grouped into one or more struct(s)
     // Each of these aggregates will be protected by a mutex
@@ -71,9 +50,13 @@ class best_practice : public base_a, public base_b
     void post_constructor(saam::ref<best_practice> self)
     {
         self_ = std::move(self);
-        // Propagate the post_constructor call to base classes
-        base_a::post_constructor(*self_);
-        base_b::post_constructor(*self_);
+    }
+
+    // The smart mutex is not copyable (because the STL mutex is also not copyable)
+    // Copy only the "members" from the other instance under the control of "this" smart mutex.
+    best_practice(const best_practice &other) noexcept :
+        synced_m_(*other.synced_m_.commence())  // Locked "other" prevents modifications in "other" during the copy operation
+    {
     }
 
     // The smart mutex is not movable (because the STL mutex is also not movable)
@@ -83,6 +66,7 @@ class best_practice : public base_a, public base_b
     {
     }
 
+    // The returned callback holds a smart reference to "this", so the callback cannot call an non existing "this" object.
     auto get_data_comparator()
     {
         assert(self_.has_value());
@@ -94,11 +78,33 @@ class best_practice : public base_a, public base_b
 
     void pre_destructor()
     {
+        // Reset the smart self reference, so that no reference to the object is alive before the destructor is called.
         self_.reset();
+    }
+
+    int data() const
+    {
+        return synced_m_.commence()->data;
     }
 };
 
-TEST(best_practice_test, demo)
+TEST(best_practice_test, copy_constructor)
+{
+    constexpr int value = 5;
+    saam::var<best_practice> bestprac(value);
+    saam::var<best_practice> bestprac_copied(bestprac);
+    ASSERT_EQ(bestprac_copied.borrow()->data(), value);
+}
+
+TEST(best_practice_test, move_constructor)
+{
+    constexpr int value = 5;
+    saam::var<best_practice> bestprac(value);
+    saam::var<best_practice> bestprac_moved(std::move(bestprac));
+    ASSERT_EQ(bestprac_moved.borrow()->data(), value);
+}
+
+TEST(best_practice_test, callback_with_smart_self_reference)
 {
     constexpr int value = 5;
     saam::var<best_practice> bestprac(value);
