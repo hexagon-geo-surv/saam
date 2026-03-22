@@ -47,7 +47,7 @@ The `synchronized` instance and its related `guard` instances are bound via smar
 `synchronized` object is destroyed before all its `guard`s are released, `saam` will panic.
 
 When multiple `synchronized` instances shall be guarded at the same time, use the `commence_all` function.
-The template parameter list types specifies if the commenced guards shall be mutable or immutable.
+The template parameter list specifies if the commenced guards shall be mutable or immutable.
 Using this function prevents deadlocks when trying to acquire multiple guards.
 
 ```cpp
