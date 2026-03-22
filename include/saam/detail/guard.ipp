@@ -249,7 +249,7 @@ guard<const T> &guard<const T>::operator=(const synchronized<TOther> &other) noe
     }
 
     protected_instance_ = other.protected_instance_;
-    lock_ = other.active_lock_;
+    lock_ = lock_t{*other.active_mutex_};
 
     return *this;
 }
