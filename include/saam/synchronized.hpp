@@ -109,15 +109,24 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
     while (true)
     {
         {
-            // Try acquiring all locks without blocking.
+            // Try acquiring all locks into a tuple without blocking.
             bool all_guards_acquired = true;
             auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
-                const auto locked = std::is_const_v<T> ? sync.active_mutex_->try_lock_shared() : sync.active_mutex_->try_lock();
-                if (locked)
+                if constexpr (std::is_const_v<T>)
                 {
-                    // Use the guard constructor that assumes the mutex is already locked
-                    // to avoid acquiring the lock a second time.
-                    return guard<T>(ref<T>(sync.protected_instance_), sync.active_mutex_);
+                    std::shared_lock lock(*sync.active_mutex_, std::try_to_lock);
+                    if (lock.owns_lock())
+                    {
+                        return guard<T>(ref<T>(sync.protected_instance_), std::move(lock));
+                    }
+                }
+                else
+                {
+                    std::unique_lock lock(*sync.active_mutex_, std::try_to_lock);
+                    if (lock.owns_lock())
+                    {
+                        return guard<T>(ref<T>(sync.protected_instance_), std::move(lock));
+                    }
                 }
 
                 all_guards_acquired = false;

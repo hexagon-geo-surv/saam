@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <thread>
+#include <condition_variable>
 
 namespace saam::test
 {
@@ -16,7 +17,7 @@ TEST(condition_test, wait_on_condition)
 
 {
     saam::synchronized<int> synced_m(5);
-    saam::synchronized<int>::condition above_5_condition(synced_m, [](const int &val) { return val > 5; });
+    std::condition_variable_any above_5_condition;
     bool stop_thread = false;
 
     std::thread thread_worker([&]() {
@@ -33,7 +34,7 @@ TEST(condition_test, wait_on_condition)
 
     {
         auto guard = synced_m.commence();
-        above_5_condition.wait(guard);
+        above_5_condition.wait(guard.get_lock(), [&guard]() { return *guard > 5; });
         ASSERT_GT(*guard, 5);
     }
 

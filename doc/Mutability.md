@@ -23,22 +23,20 @@ do not require thread synchronization. Reading is safe from any number of thread
 ## Guards
 
 Similar to `saam::ref`, smart mutex uses proxy objects to provide access to the underlying type.
-These are the `saam::guard` objects.
+These are the `saam::guard` objects. Guards are a mutex lock bundled with a smart reference to
+the protected object.
 
 Create a mutable proxy from the synchronized object. The template parameter being not `const`
 indicates that this is a unique lock—there can be only one at a time.
 Unique locks allow reading and writing to the underlying object.
 ```cpp
 saam::guard<int> number_mut_guard{number};
+
+// Or using a factory function of synchronized
+auto number_mut_guard{number.commence_mut()};
 ```
 
-Alternatively, `saam::synchronized` factory methods can create guards.
-This syntax is useful to create temporary guards in a long expression.
-```cpp
-auto doubled = *number.commence() + *number.commence();
-```
-
-Shared guards provide immutable (read-only) access, but multiple such guards may exist at the same time.
+Shared guards provide immutable (read-only) access. Multiple such guards may exist at the same time.
 There is a factory function for this as well.
 ```cpp
 saam::guard<const int> number_immut_guard{number};
@@ -49,7 +47,7 @@ The `synchronized` instance and its related `guard` instances are bound via smar
 `synchronized` object is destroyed before all its `guard`s are released, `saam` will panic.
 
 When multiple `synchronized` instances shall be guarded at the same time, use the `commence_all` function.
-The template parameter list specifies if the commenced guards shall be mutable or immutable.
+The template parameter list types specifies if the commenced guards shall be mutable or immutable.
 Using this function prevents deadlocks when trying to acquire multiple guards.
 
 ```cpp
@@ -57,77 +55,6 @@ saam::synchronized<std::string> text("Hello world");
 saam::synchronized<int> number(42);
 
 auto [text_guard, number_guard] = commence_all<const std::string, int>(text, number);
-```
-
-### Guard blindfolding
-
-Sometimes it is necessary to suspend the watch of a guard for some time. This is done by blindfolding the guard.
-The `blindfold` is a RAII object that temporarily unlocks the mutex.
-
-```cpp
-saam::guard<int> number_guard{number};
-
-// As long as the blindfold is alive, the guard's lock is free. As soon as the blindfold
-// is released the guard is on duty again.
-{
-    saam::guard<int>::blindfold number_guard_blindfold{number_guard};
-    *number_guard = 5; // Using a blindfolded guard results in a moved-from saam::ref access - the process crashes.
-}
-
-*number_guard = 5; // Blindfold is gone, the lock is alive, the guard is usable again.
-```
-
-## Condition variables
-
-`saam` associates condition variables with the `synchronized` object. This cohesion helps ensure that
-the correct mutex is locked when a condition is waited on.
-
-```cpp
-saam::synchronized<int> number(5);
-saam::synchronized<int>::condition greater_than_5_condition(number, [](const int &val) { return val > 5; });
-```
-
-Waiting for a condition variable uses familiar STL syntax.
-```cpp
-// guard assures synchrony
-saam::guard<int> number_immut_guard{number};
-
-// mutex is released during waiting
-// the exit criterion always takes a const type as parameter
-greater_than_5_condition.wait(number_immut_guard);
-
-// waiting has finished, the guard is locked again, and it is safe to access the variable
-print(*number_immut_guard);
-```
-
-Waiting works with both immutable (see above) and mutable guards.
-If the guard and the condition variable are not associated with the same synchronized object, a panic will occur.
-```cpp
-saam::guard<int> number_mut_guard{number};
-
-greater_than_5_condition.wait(number_mut_guard);
-
-// mutable guard allows modifications
-*number_mut_guard = 10;
-```
-
-The waiting time can be limited on the wait function.
-```cpp
-// Relative waiting time
-auto wait_result = greater_than_5_condition.wait(number_mut_guard, std::chrono::milliseconds(4));
-if (wait_result == saam::condition::wait_result::timeout)
-    // timeout
-
-// Or it can be absolute
-wait_result = greater_than_5_condition.wait(number_mut_guard, std::system_clock::time_point(........));
-```
-
-Conditions can be triggered, similar to STL:
-```cpp
-// Notify all waiting threads
-greater_than_5_condition.notify_all();
-// Notify one waiting thread
-greater_than_5_condition.notify_one();
 ```
 
 ## Recommended integration into classes
@@ -173,6 +100,21 @@ class my_class
     my_class(my_class &&other)
         : sync_m(*std::move(other.sync_m.lock())) // Locked "other" prevents modifications in "other" during the move operation
     {
+    }
+
+    void calculate()
+    {
+        auto m_guard{sync_m.commence_mut()};
+        m_guard->data += 1;
+        // Pass on the locked guard to the implementation functions by reference
+        calculate_step1(m_guard);
+    }
+
+  private:
+    void calculate_step1(const saam::guard<members> &m_guard)
+    {
+        // Work on the mutable guard - the guard is const, but not the "member" object.
+        m_guard->data += 10;
     }
 
 };
