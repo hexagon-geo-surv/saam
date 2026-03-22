@@ -51,6 +51,9 @@ guard<T> &guard<T>::operator=(guard<TOther> &&other) noexcept
         return *this;
     }
 
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
+
     protected_instance_ = std::move(other.protected_instance_);
     lock_ = std::move(other.lock_);
 
@@ -64,6 +67,9 @@ guard<T> &guard<T>::operator=(guard<T> &&other) noexcept
     {
         return *this;
     }
+
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = std::move(other.protected_instance_);
     lock_ = std::move(other.lock_);
@@ -80,6 +86,9 @@ guard<T> &guard<T>::operator=(const synchronized<TOther> &other) noexcept
     {
         return *this;
     }
+
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = other.protected_instance_;
     lock_ = lock_t(*other.active_mutex_);
@@ -182,11 +191,11 @@ guard<const T> &guard<const T>::operator=(const guard<const TOther> &other)
         return *this;
     }
 
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
+
     protected_instance_ = other.protected_instance_;
-    if (other.lock_.mutex() != nullptr)
-    {
-        lock_ = lock_t(*other.lock_.mutex());
-    }
+    lock_ = lock_t(*other.lock_.mutex());
 
     return *this;
 }
@@ -199,11 +208,11 @@ guard<const T> &guard<const T>::operator=(const guard<const T> &other)
         return *this;
     }
 
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
+
     protected_instance_ = other.protected_instance_;
-    if (other.lock_.mutex() != nullptr)
-    {
-        lock_ = lock_t(*other.lock_.mutex());
-    }
+    lock_ = lock_t(*other.lock_.mutex());
 
     return *this;
 }
@@ -218,6 +227,9 @@ guard<const T> &guard<const T>::operator=(guard<const TOther> &&other) noexcept
         return *this;
     }
 
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
+
     protected_instance_ = std::move(other.protected_instance_);
     lock_ = std::move(other.lock_);
 
@@ -231,6 +243,9 @@ guard<const T> &guard<const T>::operator=(guard<const T> &&other) noexcept
     {
         return *this;
     }
+
+    // Guard cannot is always associated with a mutex
+    assert(other.lock_.mutex() != nullptr);
 
     protected_instance_ = std::move(other.protected_instance_);
     lock_ = std::move(other.lock_);
@@ -247,6 +262,9 @@ guard<const T> &guard<const T>::operator=(const synchronized<TOther> &other) noe
     {
         return *this;
     }
+
+    // Guard cannot is always associated with a mutex
+    assert(other.active_mutex_ != nullptr);
 
     protected_instance_ = other.protected_instance_;
     lock_ = lock_t{*other.active_mutex_};
