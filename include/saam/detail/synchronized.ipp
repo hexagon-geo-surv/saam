@@ -59,7 +59,16 @@ synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
         return *this;
     }
 
-    // std::scoped_lock lock(protector_mutex_, other.protector_mutex_);
+    if (active_mutex_ == other.active_mutex_)
+    {
+        std::unique_lock lock(*active_mutex_);
+        protected_instance_ = other.protected_instance_;
+        return *this;
+    }
+
+    std::unique_lock<mutex_t> this_lock(*active_mutex_, std::defer_lock);
+    std::shared_lock<mutex_t> other_lock(*other.active_mutex_, std::defer_lock);
+    std::lock(this_lock, other_lock);
 
     // Just take the other instance, synchronizedes of "this" and "other" are independent
     protected_instance_ = other.protected_instance_;
@@ -76,7 +85,16 @@ synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other) noexcept
         return *this;
     }
 
-    // std::scoped_lock lock(protector_mutex_, other.protector_mutex_);
+    if (active_mutex_ == other.active_mutex_)
+    {
+        std::unique_lock lock(*active_mutex_);
+        protected_instance_ = std::move(other.protected_instance_);
+        return *this;
+    }
+
+    std::unique_lock<mutex_t> this_lock(*active_mutex_, std::defer_lock);
+    std::unique_lock<mutex_t> other_lock(*other.active_mutex_, std::defer_lock);
+    std::lock(this_lock, other_lock);
 
     // Just take the other instance, mutexes of "this" and "other" are independent
     protected_instance_ = std::move(other.protected_instance_);

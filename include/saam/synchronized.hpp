@@ -7,6 +7,7 @@
 #include <saam/guard.hpp>
 #include <saam/safe_ref.hpp>
 
+#include <mutex>
 #include <optional>
 #include <shared_mutex>
 #include <tuple>
