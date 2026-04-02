@@ -115,8 +115,8 @@ template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
 guard<T>::guard(ref<TOther> protected_instance, lock_t lock) noexcept :
-    protected_instance_(std::move(protected_instance)),
-    lock_(std::move(lock))
+    lock_(std::move(lock)),
+    protected_instance_(std::move(protected_instance))
 {
     // The mutex is expected to be already locked
 }
@@ -282,8 +282,8 @@ template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
 guard<const T>::guard(ref<const TOther> protected_instance, lock_t lock) noexcept :
-    protected_instance_(std::move(protected_instance)),
-    lock_(std::move(lock))
+    lock_(std::move(lock)),
+    protected_instance_(std::move(protected_instance))
 {
 }
 
