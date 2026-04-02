@@ -55,12 +55,6 @@ class synchronized
     // All borrowings are const operations, because borrowing just provides access to the underlying object - does not change the managed
     // wrapper.
 
-    // Use a mutex from another synchronized. This way the the same mutex protects the instances wrapped by of both synchronized
-    // Useful, when the base class has a synchronized and the derived also has a synchronized and we want to use the mutex from the base
-    // class.
-    template <typename TOther>
-    synchronized &use_mutex_of(ref<synchronized<TOther>> other);
-
     // Mutable unique lock
     [[nodiscard]] guard<T> commence_mut() const;
 
@@ -93,8 +87,7 @@ class synchronized
     template <typename TOther>
     friend class guard;
 
-    var<mutex_t> mutex_;
-    ref<mutex_t> active_mutex_{mutex_};
+    mutable mutex_t mutex_;
 
     // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
     // This case shall trigger a panic.
@@ -115,7 +108,7 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
             auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
                 if constexpr (std::is_const_v<T>)
                 {
-                    std::shared_lock lock(*sync.active_mutex_, std::try_to_lock);
+                    std::shared_lock lock(sync.mutex_, std::try_to_lock);
                     if (lock.owns_lock())
                     {
                         return guard<T>(ref<T>(sync.protected_instance_), std::move(lock));
@@ -123,7 +116,7 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
                 }
                 else
                 {
-                    std::unique_lock lock(*sync.active_mutex_, std::try_to_lock);
+                    std::unique_lock lock(sync.mutex_, std::try_to_lock);
                     if (lock.owns_lock())
                     {
                         return guard<T>(ref<T>(sync.protected_instance_), std::move(lock));
@@ -150,13 +143,13 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
         (..., [](const auto &sync) {
             if constexpr (std::is_const_v<T>)
             {
-                sync.active_mutex_->lock_shared();
-                sync.active_mutex_->unlock_shared();
+                sync.mutex_.lock_shared();
+                sync.mutex_.unlock_shared();
             }
             else
             {
-                sync.active_mutex_->lock();
-                sync.active_mutex_->unlock();
+                sync.mutex_.lock();
+                sync.mutex_.unlock();
             }
         }(syncs));
     }

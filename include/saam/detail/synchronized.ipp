@@ -38,18 +38,21 @@ synchronized<T>::synchronized(T &&instance) :
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T>::synchronized(const synchronized &other) :
+    // Copy over the content of the other protected instance
     protected_instance_(*other.commence())
 {
-    // Just take the other instance, synchronizedes of "this" and "other" are independent
+    // The mutexes of "this" and "other" are independent
 }
 
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T>::synchronized(synchronized &&other) noexcept :
+    // Move over the content of the other protected instance
     protected_instance_(std::move(*other.commence_mut()))
 {
-    // Just take the other instance, synchronizedes of "this" and "other" are independent
+    // The mutexes of "this" and "other" are independent
 }
+
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
@@ -59,18 +62,10 @@ synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
         return *this;
     }
 
-    if (active_mutex_ == other.active_mutex_)
-    {
-        std::unique_lock lock(*active_mutex_);
-        protected_instance_ = other.protected_instance_;
-        return *this;
-    }
-
-    std::unique_lock<mutex_t> this_lock(*active_mutex_, std::defer_lock);
-    std::shared_lock<mutex_t> other_lock(*other.active_mutex_, std::defer_lock);
+    std::unique_lock<mutex_t> this_lock(mutex_, std::defer_lock);
+    std::shared_lock<mutex_t> other_lock(other.mutex_, std::defer_lock);
     std::lock(this_lock, other_lock);
 
-    // Just take the other instance, synchronizedes of "this" and "other" are independent
     protected_instance_ = other.protected_instance_;
 
     return *this;
@@ -85,18 +80,10 @@ synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other) noexcept
         return *this;
     }
 
-    if (active_mutex_ == other.active_mutex_)
-    {
-        std::unique_lock lock(*active_mutex_);
-        protected_instance_ = std::move(other.protected_instance_);
-        return *this;
-    }
-
-    std::unique_lock<mutex_t> this_lock(*active_mutex_, std::defer_lock);
-    std::unique_lock<mutex_t> other_lock(*other.active_mutex_, std::defer_lock);
+    std::unique_lock<mutex_t> this_lock(mutex_, std::defer_lock);
+    std::shared_lock<mutex_t> other_lock(other.mutex_, std::defer_lock);
     std::lock(this_lock, other_lock);
 
-    // Just take the other instance, mutexes of "this" and "other" are independent
     protected_instance_ = std::move(other.protected_instance_);
 
     return *this;
@@ -105,15 +92,6 @@ synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other) noexcept
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T>::~synchronized() = default;
-
-template <typename T>
-    requires(!std::is_const_v<T>)
-template <typename TOther>
-synchronized<T> &synchronized<T>::use_mutex_of(ref<synchronized<TOther>> other)
-{
-    active_mutex_ = std::move(other->mutex_);
-    return *this;
-}
 
 template <typename T>
     requires(!std::is_const_v<T>)
