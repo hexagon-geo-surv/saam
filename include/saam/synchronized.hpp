@@ -56,7 +56,7 @@ class synchronized
     // wrapper.
 
     // Mutable unique lock
-    [[nodiscard]] guard<T> commence_mut() const;
+    [[nodiscard]] guard<T> commence_mut();
 
     // Immutable shared lock
     [[nodiscard]] guard<const T> commence() const;
@@ -66,7 +66,8 @@ class synchronized
     // administrating it in the borrow manager and a parallel destruction of the var would NOT consider this access for the final reference
     // check. The first operator-> provides a temporary smart reference. Then the call into the underlying object is done via the smart
     // reference's operator->. The two operators-> are collapsed into one operator-> by the C++ compiler.
-    [[nodiscard]] guard<T> operator->() const noexcept;
+    [[nodiscard]] guard<T> operator->() noexcept;
+    [[nodiscard]] guard<const T> operator->() const noexcept;
 
     // Assignment from underlying type - internally uses the mutable guard
     synchronized &operator=(const T &instance);

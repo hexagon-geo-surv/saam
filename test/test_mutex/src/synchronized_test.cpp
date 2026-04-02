@@ -94,6 +94,13 @@ TEST(synchronized_test, access_with_mutable_content)
     ASSERT_EQ(text.commence()->at(0), 'Y');
 }
 
+TEST(synchronized_test, access_with_immutable_content)
+{
+    const saam::synchronized<std::string> text("Hello world");
+
+    ASSERT_EQ(text.commence()->at(0), 'H');
+}
+
 TEST(synchronized_test, copy_assignment_from_underlying)
 {
     saam::synchronized<std::string> text("Hello world");
