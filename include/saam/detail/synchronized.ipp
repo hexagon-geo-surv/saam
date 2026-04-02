@@ -109,14 +109,14 @@ guard<const T> synchronized<T>::commence() const
 
 template <typename T>
     requires(!std::is_const_v<T>)
-[[nodiscard]] guard<T> synchronized<T>::operator->() noexcept
+[[nodiscard]] guard<T> synchronized<T>::operator->()
 {
     return guard<T>(*this);
 }
 
 template <typename T>
     requires(!std::is_const_v<T>)
-[[nodiscard]] guard<const T> synchronized<T>::operator->() const noexcept
+[[nodiscard]] guard<const T> synchronized<T>::operator->() const
 {
     return guard<const T>(*this);
 }

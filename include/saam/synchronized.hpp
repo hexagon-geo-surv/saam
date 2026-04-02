@@ -66,8 +66,8 @@ class synchronized
     // administrating it in the borrow manager and a parallel destruction of the var would NOT consider this access for the final reference
     // check. The first operator-> provides a temporary smart reference. Then the call into the underlying object is done via the smart
     // reference's operator->. The two operators-> are collapsed into one operator-> by the C++ compiler.
-    [[nodiscard]] guard<T> operator->() noexcept;
-    [[nodiscard]] guard<const T> operator->() const noexcept;
+    [[nodiscard]] guard<T> operator->();
+    [[nodiscard]] guard<const T> operator->() const;
 
     // Assignment from underlying type - internally uses the mutable guard
     synchronized &operator=(const T &instance);
@@ -97,6 +97,8 @@ class synchronized
 template <typename... T>
 auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
 {
+    // This function can hang forever if the same synchronized object is passed more than once in an incompatible way,
+    // for example; a caller requests two mutable guards on the same object
     while (true)
     {
         {
