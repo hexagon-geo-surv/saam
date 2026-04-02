@@ -46,7 +46,7 @@ synchronized<T>::synchronized(const synchronized &other) :
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T>::synchronized(synchronized &&other) noexcept :
+synchronized<T>::synchronized(synchronized &&other) :
     // Move over the content of the other protected instance
     protected_instance_(std::move(*other.commence_mut()))
 {
@@ -73,7 +73,7 @@ synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other) noexcept
+synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other)
 {
     if (this == &other)
     {
@@ -116,7 +116,7 @@ template <typename T>
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T> &synchronized<T>::operator=(const T &instance) noexcept
+synchronized<T> &synchronized<T>::operator=(const T &instance)
 {
     *commence_mut() = instance;
     return *this;
@@ -124,7 +124,7 @@ synchronized<T> &synchronized<T>::operator=(const T &instance) noexcept
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T> &synchronized<T>::operator=(T &&instance) noexcept
+synchronized<T> &synchronized<T>::operator=(T &&instance)
 {
     *commence_mut() = std::move(instance);
     return *this;

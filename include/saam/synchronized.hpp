@@ -39,13 +39,13 @@ class synchronized
     synchronized(const synchronized &other);
 
     // No conversion move constructor, because of the slicing of T - only the base class would be copied
-    synchronized(synchronized &&other) noexcept;
+    synchronized(synchronized &&other);
 
     // No conversion copy assignment, because of the slicing of T - only the base class would be copied
     synchronized &operator=(const synchronized &other);
 
     // No conversion move assignment, because of the slicing of T - only the base class would be copied
-    synchronized &operator=(synchronized &&other) noexcept;
+    synchronized &operator=(synchronized &&other);
 
     // No race condition is possible during destruction
     // If another thread is in the class then it must have a smart reference (ref instance),
@@ -69,8 +69,8 @@ class synchronized
     [[nodiscard]] guard<T> operator->() const noexcept;
 
     // Assignment from underlying type - internally uses the mutable guard
-    synchronized &operator=(const T &instance) noexcept;
-    synchronized &operator=(T &&instance) noexcept;
+    synchronized &operator=(const T &instance);
+    synchronized &operator=(T &&instance);
 
     // No direct casting to raw reference is allowed
     [[nodiscard]] operator T &() const = delete;
