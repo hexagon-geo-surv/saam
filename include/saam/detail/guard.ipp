@@ -35,7 +35,7 @@ guard<T>::guard(guard<T> &&other) noexcept :
 template <typename T>
 template <typename TOther>
     requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-guard<T>::guard(const synchronized<TOther> &other) noexcept :
+guard<T>::guard(synchronized<TOther> &other) noexcept :
     lock_(other.mutex_),
     protected_instance_(other.protected_instance_)
 {
@@ -73,8 +73,8 @@ guard<T> &guard<T>::operator=(guard<T> &&other) noexcept
 
 template <typename T>
 template <typename TOther>
-    requires std::is_convertible_v<TOther *, T *>
-guard<T> &guard<T>::operator=(const synchronized<TOther> &other) noexcept
+    requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+guard<T> &guard<T>::operator=(synchronized<TOther> &other) noexcept
 {
     if (const bool self_assignment = protected_instance_ == other.protected_instance_.borrow(); self_assignment)
     {

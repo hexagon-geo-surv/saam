@@ -48,7 +48,7 @@ class guard
     // Conversion copy construction from synchronized
     template <typename TOther>
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
-    guard(const synchronized<TOther> &other) noexcept;
+    guard(synchronized<TOther> &other) noexcept;
 
     // Unique guard is unique, after the assigment we would have two unique guards
     guard &operator=(const guard<T> &other) = delete;
@@ -70,8 +70,8 @@ class guard
 
     // Conversion assignment operator from synchronized
     template <typename TOther>
-        requires std::is_convertible_v<TOther *, T *>
-    guard &operator=(const synchronized<TOther> &other) noexcept;
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
+    guard &operator=(synchronized<TOther> &other) noexcept;
 
     ~guard() = default;
 
