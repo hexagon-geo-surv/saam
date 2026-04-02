@@ -18,8 +18,24 @@ namespace saam::test
 
 TEST(synchronized_test, emplace_creation)
 {
-    saam::synchronized<std::string> text(std::in_place, "Hello world");
-    ASSERT_EQ(text->length(), 11);
+    struct non_default_or_implicit_constructible
+    {
+        non_default_or_implicit_constructible(int value, std::string text) :
+            value(value),
+            text(std::move(text))
+        {
+        }
+
+        int value;
+        std::string text;
+    };
+
+    // Test the emplacement with a multi parameter constructor to check if the perfect forwarding of the arguments works correctly.
+    // With single argument constructor, the we may instantiate an implicit temporary object that gets copied/moved into the synchronized
+    // instead of emplaced.
+    saam::synchronized<non_default_or_implicit_constructible> numstr(std::in_place, 5, "Hello world");
+    ASSERT_EQ(numstr->value, 5);
+    ASSERT_EQ(numstr->text.length(), 11);
 }
 
 TEST(synchronized_test, instance_copy_creation)
@@ -66,13 +82,6 @@ TEST(synchronized_test, move_assignment)
     text_moved = std::move(text);
     ASSERT_TRUE(text->empty());
     ASSERT_EQ(*text_moved.commence(), "Hello world");
-}
-
-TEST(synchronized_test, emplacement_from_underlying)
-{
-    saam::synchronized<std::string> text("Hello world");
-    text.emplace("Hi There");
-    ASSERT_EQ(*text.commence(), "Hi There");
 }
 
 TEST(synchronized_test, access_with_mutable_content)

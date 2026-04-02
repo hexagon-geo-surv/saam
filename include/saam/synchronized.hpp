@@ -61,10 +61,6 @@ class synchronized
     // Immutable shared lock
     [[nodiscard]] guard<const T> commence() const;
 
-    // In-place re-construction of the underlying type - internally uses the mutable guard
-    template <typename... Args>
-    synchronized &emplace(Args &&...args);
-
     // During the access to the underlying object, there must be a temporary smart reference. The lifetime of the temporary smart reference
     // starts before the operator-> is called and ends well after the call is completed. Without this, we use the underlying object without
     // administrating it in the borrow manager and a parallel destruction of the var would NOT consider this access for the final reference

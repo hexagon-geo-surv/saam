@@ -17,7 +17,7 @@ template <typename T>
     requires(!std::is_const_v<T>)
 template <typename... Args>
 synchronized<T>::synchronized(std::in_place_t, Args &&...args) :
-    protected_instance_(std::forward<Args>(args)...)
+    protected_instance_(std::in_place, std::forward<Args>(args)...)
 {
 }
 
@@ -81,7 +81,7 @@ synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other) noexcept
     }
 
     std::unique_lock<mutex_t> this_lock(mutex_, std::defer_lock);
-    std::shared_lock<mutex_t> other_lock(other.mutex_, std::defer_lock);
+    std::unique_lock<mutex_t> other_lock(other.mutex_, std::defer_lock);
     std::lock(this_lock, other_lock);
 
     protected_instance_ = std::move(other.protected_instance_);
@@ -105,15 +105,6 @@ template <typename T>
 guard<const T> synchronized<T>::commence() const
 {
     return guard<const T>(*this);
-}
-
-template <typename T>
-    requires(!std::is_const_v<T>)
-template <typename... Args>
-synchronized<T> &synchronized<T>::emplace(Args &&...args)
-{
-    *commence_mut() = T(std::forward<Args>(args)...);
-    return *this;
 }
 
 template <typename T>
