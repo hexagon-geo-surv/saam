@@ -40,7 +40,8 @@ TEST(synchronized_test, emplace_creation)
 
 TEST(synchronized_test, instance_copy_creation)
 {
-    saam::synchronized<std::string> text("Hello world");
+    std::string hello{"Hello world"};
+    saam::synchronized<std::string> text(hello);
     ASSERT_EQ(text->length(), 11);
 }
 
