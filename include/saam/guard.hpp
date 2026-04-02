@@ -31,7 +31,7 @@ class guard
 
     // Conversion move constructor
     template <typename TOther>
-        requires std::is_convertible_v<TOther *, T *>
+        requires (std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
     guard(guard<TOther> &&other) noexcept;
 
     // No conversion upgrade (immutable to mutable) move constructor.
@@ -55,12 +55,12 @@ class guard
 
     // Conversion move assignment operator from guard
     template <typename TOther>
-        requires std::is_convertible_v<TOther *, T *>
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
     guard &operator=(guard<TOther> &&other) noexcept;
 
     // No conversion upgrade (immutable to mutable) move assignment.
     template <typename TOther>
-        requires std::is_convertible_v<TOther *, T *>
+        requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
     guard &operator=(guard<const TOther> &&other) noexcept = delete;
 
     guard &operator=(guard<T> &&other) noexcept;
@@ -114,9 +114,9 @@ class guard
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
     guard(ref<TOther> protected_instance, lock_t lock) noexcept;
 
+    lock_t lock_;
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<T> protected_instance_;
-    lock_t lock_;
 
     template <typename... TOther>
     friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
@@ -243,9 +243,9 @@ class guard<const T>
         requires(std::is_convertible_v<TOther *, T *> && !std::is_const_v<TOther>)
     guard(ref<const TOther> protected_instance, lock_t lock) noexcept;
 
+    lock_t lock_;
     // track the protected instance via a ref to detect the destruction of the synchronized instance
     ref<const T> protected_instance_;
-    lock_t lock_;
 
     template <typename... TOther>
     friend auto commence_all(synchronized<std::remove_const_t<TOther>> &...syncs);
