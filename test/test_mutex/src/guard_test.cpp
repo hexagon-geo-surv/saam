@@ -38,6 +38,31 @@ TEST_F(guard_test, create_mutable_from_synchronized)
     ASSERT_EQ(locked_text->at(0), 'Y');
 }
 
+TEST_F(guard_test, assign_immutable_from_synchronized)
+{
+    saam::synchronized<std::string> other_text("Other text");
+    saam::guard<const std::string> locked_text(other_text);
+
+    locked_text = text_;
+
+    ASSERT_EQ(locked_text->length(), 11);
+    locked_text = text_;
+    ASSERT_EQ(locked_text->length(), 11);
+}
+
+TEST_F(guard_test, assign_mutable_from_synchronized)
+{
+    saam::synchronized<std::string> other_text("Other text");
+    saam::guard<std::string> locked_text(other_text);
+
+    locked_text = text_;
+    locked_text->at(0) = 'Y';
+    ASSERT_EQ(locked_text->at(0), 'Y');
+
+    locked_text = text_;
+    ASSERT_EQ(locked_text->at(0), 'Y');
+}
+
 TEST_F(guard_test, dereferencing)
 {
     saam::synchronized<int> number(5);

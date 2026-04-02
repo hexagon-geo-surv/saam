@@ -17,7 +17,7 @@ template <typename T>
     requires(!std::is_const_v<T>)
 template <typename... Args>
 synchronized<T>::synchronized(std::in_place_t, Args &&...args) :
-    protected_instance_(std::forward<Args>(args)...)
+    protected_instance_(std::in_place, std::forward<Args>(args)...)
 {
 }
 
@@ -38,18 +38,21 @@ synchronized<T>::synchronized(T &&instance) :
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T>::synchronized(const synchronized &other) :
+    // Copy over the content of the other protected instance
     protected_instance_(*other.commence())
 {
-    // Just take the other instance, synchronizedes of "this" and "other" are independent
+    // The mutexes of "this" and "other" are independent
 }
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T>::synchronized(synchronized &&other) noexcept :
+synchronized<T>::synchronized(synchronized &&other) :
+    // Move over the content of the other protected instance
     protected_instance_(std::move(*other.commence_mut()))
 {
-    // Just take the other instance, synchronizedes of "this" and "other" are independent
+    // The mutexes of "this" and "other" are independent
 }
+
 template <typename T>
     requires(!std::is_const_v<T>)
 synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
@@ -59,9 +62,10 @@ synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
         return *this;
     }
 
-    // std::scoped_lock lock(protector_mutex_, other.protector_mutex_);
+    std::unique_lock<mutex_t> this_lock(mutex_, std::defer_lock);
+    std::shared_lock<mutex_t> other_lock(other.mutex_, std::defer_lock);
+    std::lock(this_lock, other_lock);
 
-    // Just take the other instance, synchronizedes of "this" and "other" are independent
     protected_instance_ = other.protected_instance_;
 
     return *this;
@@ -69,16 +73,17 @@ synchronized<T> &synchronized<T>::operator=(const synchronized<T> &other)
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other) noexcept
+synchronized<T> &synchronized<T>::operator=(synchronized<T> &&other)
 {
     if (this == &other)
     {
         return *this;
     }
 
-    // std::scoped_lock lock(protector_mutex_, other.protector_mutex_);
+    std::unique_lock<mutex_t> this_lock(mutex_, std::defer_lock);
+    std::unique_lock<mutex_t> other_lock(other.mutex_, std::defer_lock);
+    std::lock(this_lock, other_lock);
 
-    // Just take the other instance, mutexes of "this" and "other" are independent
     protected_instance_ = std::move(other.protected_instance_);
 
     return *this;
@@ -90,16 +95,7 @@ synchronized<T>::~synchronized() = default;
 
 template <typename T>
     requires(!std::is_const_v<T>)
-template <typename TOther>
-synchronized<T> &synchronized<T>::use_mutex_of(ref<synchronized<TOther>> other)
-{
-    active_mutex_ = std::move(other->mutex_);
-    return *this;
-}
-
-template <typename T>
-    requires(!std::is_const_v<T>)
-guard<T> synchronized<T>::commence_mut() const
+guard<T> synchronized<T>::commence_mut()
 {
     return guard<T>(*this);
 }
@@ -113,23 +109,21 @@ guard<const T> synchronized<T>::commence() const
 
 template <typename T>
     requires(!std::is_const_v<T>)
-template <typename... Args>
-synchronized<T> &synchronized<T>::emplace(Args &&...args)
-{
-    *commence_mut() = T(std::forward<Args>(args)...);
-    return *this;
-}
-
-template <typename T>
-    requires(!std::is_const_v<T>)
-[[nodiscard]] guard<T> synchronized<T>::operator->() const noexcept
+[[nodiscard]] guard<T> synchronized<T>::operator->()
 {
     return guard<T>(*this);
 }
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T> &synchronized<T>::operator=(const T &instance) noexcept
+[[nodiscard]] guard<const T> synchronized<T>::operator->() const
+{
+    return guard<const T>(*this);
+}
+
+template <typename T>
+    requires(!std::is_const_v<T>)
+synchronized<T> &synchronized<T>::operator=(const T &instance)
 {
     *commence_mut() = instance;
     return *this;
@@ -137,7 +131,7 @@ synchronized<T> &synchronized<T>::operator=(const T &instance) noexcept
 
 template <typename T>
     requires(!std::is_const_v<T>)
-synchronized<T> &synchronized<T>::operator=(T &&instance) noexcept
+synchronized<T> &synchronized<T>::operator=(T &&instance)
 {
     *commence_mut() = std::move(instance);
     return *this;

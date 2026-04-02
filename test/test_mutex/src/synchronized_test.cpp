@@ -16,60 +16,76 @@
 namespace saam::test
 {
 
-class synchronized_test : public ::testing::Test
+TEST(synchronized_test, emplace_creation)
 {
-};
+    struct non_default_or_implicit_constructible
+    {
+        non_default_or_implicit_constructible(int value, std::string text) :
+            value(value),
+            text(std::move(text))
+        {
+        }
 
-TEST_F(synchronized_test, instance_move_creation)
+        int value;
+        std::string text;
+    };
+
+    // Test the emplacement with a multi parameter constructor to check if the perfect forwarding of the arguments works correctly.
+    // With single argument constructor, the we may instantiate an implicit temporary object that gets copied/moved into the synchronized
+    // instead of emplaced.
+    saam::synchronized<non_default_or_implicit_constructible> numstr(std::in_place, 5, "Hello world");
+    ASSERT_EQ(numstr->value, 5);
+    ASSERT_EQ(numstr->text.length(), 11);
+}
+
+TEST(synchronized_test, instance_copy_creation)
+{
+    std::string hello{"Hello world"};
+    saam::synchronized<std::string> text(hello);
+    ASSERT_EQ(text->length(), 11);
+}
+
+TEST(synchronized_test, instance_move_creation)
 {
     saam::synchronized<std::string> text(std::string("Hello world"));
     ASSERT_EQ(text->length(), 11);
 }
 
-TEST_F(synchronized_test, emplace_creation)
+TEST(synchronized_test, copy_constructor)
 {
-    saam::synchronized<std::string> text("Hello world");
+    saam::synchronized<std::string> text(std::string("Hello world"));
+    saam::synchronized<std::string> text_copied(text);
     ASSERT_EQ(text->length(), 11);
+    ASSERT_EQ(text_copied->length(), 11);
 }
 
-TEST_F(synchronized_test, instance_creation)
+TEST(synchronized_test, move_constructor)
 {
-    saam::synchronized<std::string> text("Hello world");
-    ASSERT_EQ(text->length(), 11);
+    saam::synchronized<std::string> text(std::string("Hello world"));
+    saam::synchronized<std::string> text_moved(std::move(text));
+    ASSERT_TRUE(text->empty());
+    ASSERT_EQ(text_moved->length(), 11);
 }
 
-TEST_F(synchronized_test, assignment)
+TEST(synchronized_test, copy_assignment)
 {
     saam::synchronized<std::string> text("Hello world");
     saam::synchronized<std::string> text_copy;
     text_copy = text;
+    ASSERT_EQ(*text.commence(), "Hello world");
     ASSERT_EQ(*text_copy.commence(), "Hello world");
 }
 
-TEST_F(synchronized_test, assignment_from_underlying)
+TEST(synchronized_test, move_assignment)
 {
     saam::synchronized<std::string> text("Hello world");
-    std::string text_copy("Hi There");
-    text = text_copy;
-    ASSERT_EQ(*text.commence(), "Hi There");
+    saam::synchronized<std::string> text_moved;
+    text_moved = std::move(text);
+    ASSERT_TRUE(text->empty());
+    ASSERT_EQ(*text_moved.commence(), "Hello world");
 }
 
-TEST_F(synchronized_test, content_assignment)
-{
-    saam::synchronized<std::string> text("Hello world");
-    saam::synchronized<std::string> text_copy;
-    *text_copy.commence_mut() = *text.commence();
-    ASSERT_EQ(*text_copy.commence(), "Hello world");
-}
-
-TEST_F(synchronized_test, emplacement_from_underlying)
-{
-    saam::synchronized<std::string> text("Hello world");
-    text.emplace("Hi There");
-    ASSERT_EQ(*text.commence(), "Hi There");
-}
-
-TEST_F(synchronized_test, access_with_mutable_content)
+TEST(synchronized_test, access_with_mutable_content)
 {
     saam::synchronized<std::string> text("Hello world");
 
@@ -79,7 +95,40 @@ TEST_F(synchronized_test, access_with_mutable_content)
     ASSERT_EQ(text.commence()->at(0), 'Y');
 }
 
-TEST_F(synchronized_test, commence_all)
+TEST(synchronized_test, access_with_immutable_content)
+{
+    const saam::synchronized<std::string> text("Hello world");
+
+    ASSERT_EQ(text.commence()->at(0), 'H');
+}
+
+TEST(synchronized_test, copy_assignment_from_underlying)
+{
+    saam::synchronized<std::string> text("Hello world");
+    std::string text2("Hi There");
+    text = text2;
+    ASSERT_EQ(text2, "Hi There");
+    ASSERT_EQ(*text.commence(), "Hi There");
+}
+
+TEST(synchronized_test, move_assignment_from_underlying)
+{
+    saam::synchronized<std::string> text("Hello world");
+    std::string text2("Hi There");
+    text = std::move(text2);
+    ASSERT_TRUE(text2.empty());
+    ASSERT_EQ(*text.commence(), "Hi There");
+}
+
+TEST(synchronized_test, content_assignment)
+{
+    saam::synchronized<std::string> text("Hello world");
+    saam::synchronized<std::string> text_copy;
+    *text_copy.commence_mut() = *text.commence();
+    ASSERT_EQ(*text_copy.commence(), "Hello world");
+}
+
+TEST(synchronized_test, commence_all)
 {
     saam::synchronized<std::string> text("Hello world");
     saam::synchronized<int> number(42);
@@ -93,7 +142,7 @@ TEST_F(synchronized_test, commence_all)
     ASSERT_EQ(*number_guard, 43);
 }
 
-TEST_F(synchronized_test, commence_all_with_retry)
+TEST(synchronized_test, commence_all_with_retry)
 {
     saam::synchronized<std::string> text("Hello world");
     saam::synchronized<int> number(42);

@@ -7,6 +7,7 @@
 #include <saam/guard.hpp>
 #include <saam/safe_ref.hpp>
 
+#include <mutex>
 #include <optional>
 #include <shared_mutex>
 #include <tuple>
@@ -38,13 +39,13 @@ class synchronized
     synchronized(const synchronized &other);
 
     // No conversion move constructor, because of the slicing of T - only the base class would be copied
-    synchronized(synchronized &&other) noexcept;
+    synchronized(synchronized &&other);
 
     // No conversion copy assignment, because of the slicing of T - only the base class would be copied
     synchronized &operator=(const synchronized &other);
 
     // No conversion move assignment, because of the slicing of T - only the base class would be copied
-    synchronized &operator=(synchronized &&other) noexcept;
+    synchronized &operator=(synchronized &&other);
 
     // No race condition is possible during destruction
     // If another thread is in the class then it must have a smart reference (ref instance),
@@ -54,32 +55,23 @@ class synchronized
     // All borrowings are const operations, because borrowing just provides access to the underlying object - does not change the managed
     // wrapper.
 
-    // Use a mutex from another synchronized. This way the the same mutex protects the instances wrapped by of both synchronized
-    // Useful, when the base class has a synchronized and the derived also has a synchronized and we want to use the mutex from the base
-    // class.
-    template <typename TOther>
-    synchronized &use_mutex_of(ref<synchronized<TOther>> other);
-
     // Mutable unique lock
-    [[nodiscard]] guard<T> commence_mut() const;
+    [[nodiscard]] guard<T> commence_mut();
 
     // Immutable shared lock
     [[nodiscard]] guard<const T> commence() const;
-
-    // In-place re-construction of the underlying type - internally uses the mutable guard
-    template <typename... Args>
-    synchronized &emplace(Args &&...args);
 
     // During the access to the underlying object, there must be a temporary smart reference. The lifetime of the temporary smart reference
     // starts before the operator-> is called and ends well after the call is completed. Without this, we use the underlying object without
     // administrating it in the borrow manager and a parallel destruction of the var would NOT consider this access for the final reference
     // check. The first operator-> provides a temporary smart reference. Then the call into the underlying object is done via the smart
     // reference's operator->. The two operators-> are collapsed into one operator-> by the C++ compiler.
-    [[nodiscard]] guard<T> operator->() const noexcept;
+    [[nodiscard]] guard<T> operator->();
+    [[nodiscard]] guard<const T> operator->() const;
 
     // Assignment from underlying type - internally uses the mutable guard
-    synchronized &operator=(const T &instance) noexcept;
-    synchronized &operator=(T &&instance) noexcept;
+    synchronized &operator=(const T &instance);
+    synchronized &operator=(T &&instance);
 
     // No direct casting to raw reference is allowed
     [[nodiscard]] operator T &() const = delete;
@@ -92,8 +84,7 @@ class synchronized
     template <typename TOther>
     friend class guard;
 
-    var<mutex_t> mutex_;
-    ref<mutex_t> active_mutex_{mutex_};
+    mutable mutex_t mutex_;
 
     // When a synchronized instance is released in a locked state, the outstanding locks contain invalid reference.
     // This case shall trigger a panic.
@@ -106,6 +97,8 @@ class synchronized
 template <typename... T>
 auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
 {
+    // This function can hang forever if the same synchronized object is passed more than once in an incompatible way,
+    // for example; a caller requests two mutable guards on the same object
     while (true)
     {
         {
@@ -114,7 +107,7 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
             auto maybe_guards = std::make_tuple([&](const auto &sync) -> std::optional<guard<T>> {
                 if constexpr (std::is_const_v<T>)
                 {
-                    std::shared_lock lock(*sync.active_mutex_, std::try_to_lock);
+                    std::shared_lock lock(sync.mutex_, std::try_to_lock);
                     if (lock.owns_lock())
                     {
                         return guard<T>(ref<T>(sync.protected_instance_), std::move(lock));
@@ -122,7 +115,7 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
                 }
                 else
                 {
-                    std::unique_lock lock(*sync.active_mutex_, std::try_to_lock);
+                    std::unique_lock lock(sync.mutex_, std::try_to_lock);
                     if (lock.owns_lock())
                     {
                         return guard<T>(ref<T>(sync.protected_instance_), std::move(lock));
@@ -149,13 +142,13 @@ auto commence_all(synchronized<std::remove_const_t<T>> &...syncs)
         (..., [](const auto &sync) {
             if constexpr (std::is_const_v<T>)
             {
-                sync.active_mutex_->lock_shared();
-                sync.active_mutex_->unlock_shared();
+                sync.mutex_.lock_shared();
+                sync.mutex_.unlock_shared();
             }
             else
             {
-                sync.active_mutex_->lock();
-                sync.active_mutex_->unlock();
+                sync.mutex_.lock();
+                sync.mutex_.unlock();
             }
         }(syncs));
     }
