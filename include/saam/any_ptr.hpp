@@ -99,7 +99,7 @@ class any_ptr
 template <typename T>
 auto make_any_ptr(T &instance)
 {
-    return any_ptr<T>([&instance]() -> T * { return &instance; });
+    return any_ptr<T>([ptr = &instance]() -> T * { return ptr; });
 }
 
 template <typename T>
