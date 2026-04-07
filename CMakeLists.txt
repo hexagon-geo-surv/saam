@@ -14,12 +14,15 @@ project(saam
         VERSION ${SAAM_VERSION}
 )
 
+message(STATUS "Building ${PROJECT_NAME} version ${PROJECT_VERSION}")
+
 add_library(${PROJECT_NAME} INTERFACE)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 #
 # Dependencies
 #
+# find_package(<dependency> REQUIRED)
 
 #
 # Compiler
@@ -60,6 +63,11 @@ target_include_directories(${PROJECT_NAME}
 
 # Define minimum C++ standard - unless it is defined in the toolchain
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+
+target_link_libraries(${PROJECT_NAME}
+    INTERFACE
+    # <dependency>::<dependency>
+)
 
 #
 # Installation

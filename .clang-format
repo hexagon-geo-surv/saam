@@ -187,29 +187,7 @@ AllowShortLoopsOnASingleLine: false
 SortIncludes: CaseInsensitive
 
 # Group includes into blocks separated by empty lines
-IncludeBlocks: Regroup
-
-# Include priority order (lower number = higher priority, appears first)
-IncludeCategories:
-  # Priority 1: Implementation headers (local project files)
-  # Example: #include "my_header.hpp"
-  - Regex: '".*"'
-    Priority: 1
-    
-  # Priority 2: Project API headers  
-  # Example: #include <saam/public_api.hpp>
-  - Regex: '^<saam/'
-    Priority: 2
-    
-  # Priority 3: Third-party library headers (with subdirectories)
-  # Example: #include <boost/algorithm/string.hpp>
-  - Regex: '^<[[:alnum:]_]+/'
-    Priority: 3
-    
-  # Priority 4: Standard library headers
-  # Example: #include <vector>, #include <string>
-  - Regex: '^<[[:alnum:]_]+>'
-    Priority: 4
+IncludeBlocks: Preserve
 
 # ===== MISCELLANEOUS FORMATTING =====
 # Ensure files end with a newline character

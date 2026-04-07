@@ -2,9 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+import os
+
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
-import re
+from conan.tools.files import copy
+from conan.tools.scm import Version
 
 
 
@@ -31,13 +34,6 @@ class SaamPackage(ConanFile):
         "bc_mode": "counted"
     }
 
-    @property
-    def three_number_version(self):
-        semver_pattern = '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
-        parsed_version = re.search(semver_pattern, self.version)
-        if parsed_version:
-            return ".".join(parsed_version.group(1, 2, 3))
-
     def requirements(self):
         pass
 
@@ -48,7 +44,8 @@ class SaamPackage(ConanFile):
         toolchain = CMakeToolchain(self)
         toolchain.cache_variables["CMAKE_VERBOSE_MAKEFILE"] = True
         toolchain.cache_variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = True
-        toolchain.cache_variables["SAAM_VERSION"] = self.three_number_version
+        v = Version(self.version)
+        toolchain.cache_variables["SAAM_VERSION"] = f"{v.major}.{v.minor}.{v.patch}"
         self.output.info(f"BC mode: {self.options.bc_mode}")
         toolchain.cache_variables["SAAM_BORROW_CHECKING_MODE_CMAKE"] = {"unchecked":"2", "counted":"0", "tracked":"1"}[str(self.options.bc_mode)]
         toolchain.generate()

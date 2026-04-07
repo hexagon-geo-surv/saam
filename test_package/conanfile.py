@@ -9,14 +9,11 @@ from conan import ConanFile
 from conan.tools.build import can_run
 
 class SaamTestPackage(ConanFile):
-    name = "saam_test_package"
+    name = "saam-testpackage"
 
     settings = "os", "compiler", "build_type", "arch"
 
     generators = "CMakeDeps", "CMakeToolchain", "VirtualRunEnv", "VirtualBuildEnv"
-
-    def requirements(self):
-        self.requires(self.tested_reference_str)
 
     def build(self):
         cmake = CMake(self)
