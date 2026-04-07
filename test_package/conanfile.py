@@ -9,7 +9,7 @@ from conan import ConanFile
 from conan.tools.build import can_run
 
 class SaamTestPackage(ConanFile):
-    name = "saam-testpackage"
+    name = "saam_test_package"
 
     settings = "os", "compiler", "build_type", "arch"
 
