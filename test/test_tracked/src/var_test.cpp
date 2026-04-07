@@ -53,13 +53,6 @@ TEST(tracked_var_test, var_underlying_type_move_assignment)
     ASSERT_TRUE(text2.empty());
 }
 
-TEST(tracked_var_test, var_underlying_type_emplacement)
-{
-    saam::var<std::string> text("Hello world");
-    text.emplace("Hello");
-    ASSERT_EQ(text->length(), 5);
-}
-
 TEST(tracked_var_test, compare_var_with_underlying_type)
 {
     saam::var<std::string> text("Hello world");

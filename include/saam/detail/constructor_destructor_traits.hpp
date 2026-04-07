@@ -19,6 +19,11 @@ concept has_post_constructor = requires(T t, TBorrowManager borrow_mgr, saam::re
     { t.post_constructor(t_ref) } -> std::same_as<void>;
 };
 
+template <typename T, typename TBorrowManager>
+concept has_post_assignment = requires(T t, TBorrowManager borrow_mgr, saam::ref<T, TBorrowManager> t_ref) {
+    { t.post_assignment(t_ref) } -> std::same_as<void>;
+};
+
 template <typename T>
 concept has_pre_destructor = requires(T t) {
     { t.pre_destructor() } -> std::same_as<void>;
