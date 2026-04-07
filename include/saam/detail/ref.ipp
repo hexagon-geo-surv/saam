@@ -7,6 +7,7 @@
 #include <saam/ref.hpp>
 #include <saam/var.hpp>
 
+#include <cassert>
 #include <type_traits>
 
 namespace saam
@@ -155,28 +156,28 @@ bool ref<T, TBorrowManager>::operator!=(const ref &other) const noexcept
 template <typename T, borrow_manager TBorrowManager>
 T *ref<T, TBorrowManager>::operator->() const noexcept
 {
-    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    assert(!is_moved_from() && "ref::operator->() called on a moved-from ref");
     return instance_;
 }
 
 template <typename T, borrow_manager TBorrowManager>
 T &ref<T, TBorrowManager>::operator*() const noexcept
 {
-    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    assert(!is_moved_from() && "ref::operator*() called on a moved-from ref");
     return *instance_;
 }
 
 template <typename T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::operator T &() const noexcept
 {
-    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    assert(!is_moved_from() && "ref::operator T&() called on a moved-from ref");
     return *instance_;
 }
 
 template <typename T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::operator T *() const noexcept
 {
-    // A reference is always bound to an object, so no check is needed - unless it is in a moved from state
+    assert(!is_moved_from() && "ref::operator T*() called on a moved-from ref");
     return instance_;
 }
 
