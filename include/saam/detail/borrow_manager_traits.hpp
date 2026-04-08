@@ -5,6 +5,7 @@
 #pragma once
 
 #include <concepts>
+#include <type_traits>
 #include <typeinfo>
 
 namespace saam
@@ -18,9 +19,21 @@ concept borrow_manager = requires(TBorrowManager instance, typename TBorrowManag
     { ref_base.is_managed() } -> std::convertible_to<bool>;
 };
 
+template <typename T>
+concept forward_declared = !requires { sizeof(T); };
+
+template <typename T>
+concept nothrow_movable = std::is_nothrow_move_constructible_v<T> && std::is_nothrow_move_assignable_v<T>;
+
+// Forward declared typed are accepted as underlying type, because there is no way to check their properties.
+// Const types are not movable, so no nothrow_movable is necessary
+// For complete, non const types the the move and destruction shall be nothrow.
+template <typename T>
+concept underlying_type = forward_declared<T> || std::is_const_v<T> || nothrow_movable<T>;
+
 template <typename TBorrowManager>
 concept can_check_dangling_references = requires(TBorrowManager instance) {
-    { instance.verify_dangling_references(typeid(int), nullptr) };
+    { instance.verify_dangling_references(typeid(int), nullptr) } noexcept;
 };
 
 }  // namespace saam

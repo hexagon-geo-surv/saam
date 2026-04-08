@@ -12,10 +12,10 @@
 namespace saam
 {
 
-template <typename TOther, borrow_manager TOtherBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 class ref;
 
-template <typename T, borrow_manager TBorrowManager = default_borrow_manager_t>
+template <underlying_type T, borrow_manager TBorrowManager = default_borrow_manager_t>
 class var
 {
   public:
@@ -104,13 +104,13 @@ class var
     [[nodiscard]] operator T &() const = delete;
 
   private:
-    void call_post_constructor();
-    void call_post_assignment();
+    void call_post_constructor() noexcept;
+    void call_post_assignment() noexcept;
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class var;
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class ref;
 
     T instance_;

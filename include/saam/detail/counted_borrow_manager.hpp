@@ -172,7 +172,7 @@ class counted_borrow_manager
         assert(prev_value > 0);
     }
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class var;
 
     // maxint the counter was closed, no more borrows are allowed

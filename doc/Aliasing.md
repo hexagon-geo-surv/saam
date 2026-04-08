@@ -6,6 +6,8 @@ SPDX-License-Identifier: MIT
 
 # Aliasing model
 
+## Raw References
+
 Raw C++ references (like `int&`) are similar in capability to raw pointers (like `int*`). They are fast but do not provide any safety against dangling.
 
 Here is a classical dangling reference example with raw variable and raw references:
@@ -62,6 +64,10 @@ Advantages of smart references over raw references:
 - `saam::ref` can be augmented with `std::optional`, so it can be unbound, default constructed
 - `saam::ref` is reassignable - unlike raw references.
 - A class that owns `saam::ref`s can be copy/move assigned due to reassignability of the smart reference - unlike raw references.
+
+There is an exception to the forever validity of the smart reference: when the reference is in a "moved from" state. 
+It shall be not deferenced, but can be safely destroyed or re-assigned and used again.
+An attempt to dereference an "moved from" smart reference causes a nullptr access, which is still better than accessing a stale address - like for a raw reference.
 
 ## Smart variables on the heap
 
@@ -248,8 +254,9 @@ This style is used mainly for compatibility reasons - see the legacy API section
 
 ## Post-constructor and pre-destructor
 
-A `saam::var` decorated instance may have two public functions `void post_constructor(saam::ref<T> self)` 
-and a `void pre_destructor()`. If any or both of these methods are present in the decorated class, then `saam::var` is going to call them timely. You don't need to derive from any interface, this is done via duck-typing technique.
+A `saam::var` decorated instance may have 3 public functions `void post_constructor(saam::ref<T> self) nothrow`, `void post_assignment(saam::ref<T> self) nothrow`
+and a `void pre_destructor() nothrow`.
+If any of these methods are present in the decorated class, then `saam::var` is going to call them timely. You don't need to derive from any interface, this is done via duck-typing technique.
 
 In the regular C++ constructor the smart self reference is not yet available. The "this" pointer is also not considered to be usable, because the object is not yet created. Therefore if a post-constructor exists, there the self reference is already available. It is ideal place to create callbacks or any other objects, which needs to know the smart reference of the object.
 
@@ -262,14 +269,14 @@ Sometimes object need to know their self smart references - for example to captu
 ```cpp
 class my_class
 {
-    void post_constructor(saam::ref<best_practice> self)
+    void post_constructor(saam::ref<best_practice> self) noexcept
     {
         subscription_ = shutdown_controller_->on_shutdown([self]() {
             self->print_status();
         });
     }
 
-    void pre_destructor()
+    void pre_destructor() noexcept
     {
         // Revoke the callback, because it contains a reference to my_class.
         // This would make a panic when my_class is destroyed.
@@ -287,7 +294,7 @@ class is destructed.
 ```cpp
 class my_class
 {
-    void post_constructor(saam::ref<best_practice> self)
+    void post_constructor(saam::ref<best_practice> self) noexcept
     {
         self_ = std::move(self);
     }
@@ -299,7 +306,7 @@ class my_class
         });
     }
 
-    void pre_destructor()
+    void pre_destructor() noexcept
     {
         subscription_.reset();
         self_.reset();

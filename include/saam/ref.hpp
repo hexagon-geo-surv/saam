@@ -12,10 +12,10 @@
 namespace saam
 {
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 class var;
 
-template <typename T, borrow_manager TBorrowManager = default_borrow_manager_t>
+template <underlying_type T, borrow_manager TBorrowManager = default_borrow_manager_t>
 class ref : private TBorrowManager::ref_base
 {
   public:
@@ -26,7 +26,7 @@ class ref : private TBorrowManager::ref_base
     ref(T &instance);
 
     // Conversion copy constructor
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_convertible_v<TOther *, T *>
     ref(const ref<TOther, TBorrowManager> &other);
 
@@ -41,7 +41,7 @@ class ref : private TBorrowManager::ref_base
     // Implementation flexibility: Library implementers can choose how to represent the moved-from state
 
     // Conversion move constructor
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_convertible_v<TOther *, T *>
     ref(ref<TOther, TBorrowManager> &&other) noexcept;
 
@@ -49,30 +49,30 @@ class ref : private TBorrowManager::ref_base
     ref(ref &&other) noexcept;
 
     // Conversion copy construction from var
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_convertible_v<TOther *, T *>
     ref(const var<TOther, TBorrowManager> &var) noexcept;
 
     // Conversion copy assignment operator from ref
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_convertible_v<TOther *, T *>
     ref &operator=(const ref<TOther, TBorrowManager> &other);
 
     ref &operator=(const ref &other);
 
     // Conversion move assignment operator from ref
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_convertible_v<TOther *, T *>
     ref &operator=(ref<TOther, TBorrowManager> &&other) noexcept;
 
     ref &operator=(ref &&other) noexcept;
 
     // Conversion assignment operator from var
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_convertible_v<TOther *, T *>
     ref &operator=(const var<TOther, TBorrowManager> &other) noexcept;
 
-    ~ref() = default;
+    ~ref() noexcept = default;
 
     // When the reference is in a moved-from state, it does not contain a valid address to an instance
     // Reassigning the reference will make it valid again
@@ -96,13 +96,13 @@ class ref : private TBorrowManager::ref_base
     [[nodiscard]] explicit operator T *() const noexcept;
 
     // Downcasting to a derived type - without type checking
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_base_of_v<T, TOther>
     ref<TOther, TBorrowManager> static_down_cast() const;
 
     // Downcasting to a derived type - with RTTI type checking
     // Throws std::bad_cast if the cast is not valid
-    template <typename TOther>
+    template <underlying_type TOther>
         requires std::is_base_of_v<T, TOther>
     ref<TOther, TBorrowManager> dynamic_down_cast() const;
 
@@ -110,20 +110,20 @@ class ref : private TBorrowManager::ref_base
     // Managed reference constructor
     ref(T &instance, TBorrowManager *borrow_manager);
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class var;
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class ref;
 
     T *instance_ = nullptr;
 };
 
 // Deduction guide
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref(var<T, TBorrowManager>) -> ref<T, TBorrowManager>;
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref(ref<T, TBorrowManager>) -> ref<T, TBorrowManager>;
 
 }  // namespace saam

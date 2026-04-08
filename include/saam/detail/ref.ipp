@@ -13,21 +13,21 @@
 namespace saam
 {
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::ref(T &instance) :
     ref(instance, nullptr)
 {
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::ref(T &instance, TBorrowManager *borrow_manager) :
     TBorrowManager::ref_base(borrow_manager),
     instance_(&instance)
 {
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_convertible_v<TOther *, T *>
 ref<T, TBorrowManager>::ref(const ref<TOther, TBorrowManager> &other) :
     TBorrowManager::ref_base(other),
@@ -35,15 +35,15 @@ ref<T, TBorrowManager>::ref(const ref<TOther, TBorrowManager> &other) :
 {
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::ref(const ref &other) :
     TBorrowManager::ref_base(other),
     instance_(other.instance_)
 {
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_convertible_v<TOther *, T *>
 ref<T, TBorrowManager>::ref(ref<TOther, TBorrowManager> &&other) noexcept :
     TBorrowManager::ref_base(std::move(other)),
@@ -52,7 +52,7 @@ ref<T, TBorrowManager>::ref(ref<TOther, TBorrowManager> &&other) noexcept :
     other.instance_ = nullptr;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::ref(ref &&other) noexcept :
     TBorrowManager::ref_base(std::move(other)),
     instance_(other.instance_)
@@ -60,16 +60,16 @@ ref<T, TBorrowManager>::ref(ref &&other) noexcept :
     other.instance_ = nullptr;
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_convertible_v<TOther *, T *>
 ref<T, TBorrowManager>::ref(const var<TOther, TBorrowManager> &other) noexcept :
     ref(const_cast<var<TOther, TBorrowManager> &>(other).instance_, &const_cast<var<TOther, TBorrowManager> &>(other).borrow_manager_)
 {
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_convertible_v<TOther *, T *>
 ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const ref<TOther, TBorrowManager> &other)
 {
@@ -80,7 +80,7 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const ref<TOther, TBor
     return *this;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const ref &other)
 {
     if (this == &other)
@@ -95,8 +95,8 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const ref &other)
     return *this;
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_convertible_v<TOther *, T *>
 ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(ref<TOther, TBorrowManager> &&other) noexcept
 {
@@ -108,7 +108,7 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(ref<TOther, TBorrowMan
     return *this;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(ref &&other) noexcept
 {
     if (this == &other)
@@ -124,8 +124,8 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(ref &&other) noexcept
     return *this;
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_convertible_v<TOther *, T *>
 ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const var<TOther, TBorrowManager> &other) noexcept
 {
@@ -135,54 +135,54 @@ ref<T, TBorrowManager> &ref<T, TBorrowManager>::operator=(const var<TOther, TBor
     return *this;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 [[nodiscard]] bool ref<T, TBorrowManager>::is_moved_from() const noexcept
 {
     return instance_ == nullptr;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 bool ref<T, TBorrowManager>::operator==(const ref &other) const noexcept
 {
     return instance_ == other.instance_;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 bool ref<T, TBorrowManager>::operator!=(const ref &other) const noexcept
 {
     return !(instance_ == other.instance_);
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 T *ref<T, TBorrowManager>::operator->() const noexcept
 {
     assert(!is_moved_from() && "ref::operator->() called on a moved-from ref");
     return instance_;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 T &ref<T, TBorrowManager>::operator*() const noexcept
 {
     assert(!is_moved_from() && "ref::operator*() called on a moved-from ref");
     return *instance_;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::operator T &() const noexcept
 {
     assert(!is_moved_from() && "ref::operator T&() called on a moved-from ref");
     return *instance_;
 }
 
-template <typename T, borrow_manager TBorrowManager>
+template <underlying_type T, borrow_manager TBorrowManager>
 ref<T, TBorrowManager>::operator T *() const noexcept
 {
     assert(!is_moved_from() && "ref::operator T*() called on a moved-from ref");
     return instance_;
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_base_of_v<T, TOther>
 ref<TOther, TBorrowManager> ref<T, TBorrowManager>::static_down_cast() const
 {
@@ -190,8 +190,8 @@ ref<TOther, TBorrowManager> ref<T, TBorrowManager>::static_down_cast() const
     return ref<TOther, TBorrowManager>(static_cast<TOther &>(*instance_), TBorrowManager::ref_base::borrow_manager());
 }
 
-template <typename T, borrow_manager TBorrowManager>
-template <typename TOther>
+template <underlying_type T, borrow_manager TBorrowManager>
+template <underlying_type TOther>
     requires std::is_base_of_v<T, TOther>
 ref<TOther, TBorrowManager> ref<T, TBorrowManager>::dynamic_down_cast() const
 {

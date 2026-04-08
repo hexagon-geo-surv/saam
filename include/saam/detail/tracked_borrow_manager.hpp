@@ -234,7 +234,7 @@ class tracked_borrow_manager
         }
     }
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class var;
 
     mutable std::mutex mutex_;
