@@ -7,6 +7,7 @@
 #include <saam/detail/constructor_destructor_traits.hpp>
 #include <saam/detail/unchecked_borrow_manager.hpp>
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 

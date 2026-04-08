@@ -10,6 +10,7 @@
 #include <functional>
 #include <mutex>
 #include <stacktrace>
+#include <utility>
 
 namespace saam
 {
