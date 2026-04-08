@@ -1,0 +1,7 @@
+*
+!.gitignore
+
+!src/main.cpp
+
+!CMakeLists.txt
+!conanfile.py

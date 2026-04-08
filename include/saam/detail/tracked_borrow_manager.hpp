@@ -10,6 +10,7 @@
 #include <functional>
 #include <mutex>
 #include <stacktrace>
+#include <utility>
 
 namespace saam
 {
@@ -59,9 +60,10 @@ class tracked_borrow_manager
         ref_base(ref_base &&other) noexcept :
             borrow_manager_(other.borrow_manager_)
         {
-            register_self();
-
-            other.unregister_self();
+            if (is_managed())
+            {
+                borrow_manager_->transfer_ref(other, *this);
+            }
         }
 
         ref_base &operator=(const ref_base &other)
@@ -96,10 +98,15 @@ class tracked_borrow_manager
                 unregister_self();
 
                 borrow_manager_ = other.borrow_manager_;
-                register_self();
+                if (is_managed())
+                {
+                    borrow_manager_->transfer_ref(other, *this);
+                }
             }
-
-            other.unregister_self();
+            else
+            {
+                other.unregister_self();
+            }
 
             return *this;
         }
@@ -195,6 +202,20 @@ class tracked_borrow_manager
         *previous_link_ptr = (*previous_link_ptr)->next_;
     }
 
+    // Atomically replace `from` with `to` in the chain under a single lock,
+    // preserving `from`'s chain position and creation stacktrace.
+    // On return `from` is fully detached (borrow_manager_ == nullptr).
+    void transfer_ref(ref_base &from, ref_base &to) noexcept
+    {
+        std::lock_guard guard(mutex_);
+        auto *previous_link_ptr = get_previous_ptr_in_chain(from);
+        to.next_ = from.next_;
+        to.stacktrace_ = std::move(from.stacktrace_);
+        *previous_link_ptr = &to;
+        from.next_ = nullptr;
+        from.borrow_manager_ = nullptr;
+    }
+
     ref_base **get_previous_ptr_in_chain(ref_base &ref_to_detach)
     {
         auto *previous_link_ptr = &ref_chain_root_;
@@ -214,7 +235,7 @@ class tracked_borrow_manager
         }
     }
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class var;
 
     mutable std::mutex mutex_;

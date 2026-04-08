@@ -15,9 +15,6 @@ class SaamTestPackage(ConanFile):
 
     generators = "CMakeDeps", "CMakeToolchain", "VirtualRunEnv", "VirtualBuildEnv"
 
-    def requirements(self):
-        self.requires(self.tested_reference_str)
-
     def build(self):
         cmake = CMake(self)
         cmake.verbose = True

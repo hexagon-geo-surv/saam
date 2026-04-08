@@ -3,30 +3,23 @@
 # SPDX-License-Identifier: MIT
 
 *
+!.github
+!.github/**
 
-!LICENSES
-!LICENSES/**
+!.teamcity
+!.teamcity/**
 
 !apps
-!apps/**
 
 !doc
-!doc/**
 
 !include
-!include/**
 
 !test
-!test/**
 
 !test_package
-!test_package/src
-!test_package/src/**
-!test_package/CMakeLists.txt
-!test_package/conanfile.py
 
 !datasets
-!datasets/*.dvc
 
 !.clang-format
 !.clang-tidy

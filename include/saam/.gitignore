@@ -1,0 +1,8 @@
+*
+!.gitignore
+
+!detail/
+
+!**/*.hpp
+!**/*.hpp.in
+!**/*.ipp

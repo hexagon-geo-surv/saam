@@ -53,7 +53,7 @@ class unchecked_borrow_manager
   private:
     unchecked_borrow_manager() = default;
 
-    template <typename TOther, borrow_manager TOtherBorrowManager>
+    template <underlying_type TOther, borrow_manager TOtherBorrowManager>
     friend class var;
 };
 

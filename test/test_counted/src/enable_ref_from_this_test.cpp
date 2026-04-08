@@ -26,12 +26,12 @@ class my_class
         return data + increment_;
     }
 
-    void post_constructor(saam::ref<my_class> self)
+    void post_constructor(saam::ref<my_class> self) noexcept
     {
         self_ = std::move(self);
     }
 
-    void pre_destructor()
+    void pre_destructor() noexcept
     {
         self_.reset();
     }
@@ -66,7 +66,7 @@ TEST(counted_enable_ref_from_this_test, dangling_ref)
 class my_class_only_post_constructor
 {
   public:
-    void post_constructor(saam::ref<my_class_only_post_constructor> self)
+    void post_constructor(saam::ref<my_class_only_post_constructor> self) noexcept
     {
         self_ = std::move(self);
     }
@@ -85,12 +85,12 @@ TEST(counted_enable_ref_from_this_test, self_reference_not_released_before_destr
 class my_class_with_post_constructor_and_pre_destructor
 {
   public:
-    void post_constructor(saam::ref<my_class_with_post_constructor_and_pre_destructor> self)
+    void post_constructor(saam::ref<my_class_with_post_constructor_and_pre_destructor> self) noexcept
     {
         self_ = std::move(self);
     }
 
-    void pre_destructor()
+    void pre_destructor() noexcept
     {
         // Release the self reference before destruction, so that the instance does not contain
         // a reference to self during destruction.
