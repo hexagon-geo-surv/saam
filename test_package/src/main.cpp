@@ -10,6 +10,6 @@
 int main()
 {
     using namespace saam;
-    std::cout << "saam version:" << version::major() << '.' << version::minor() << '.'<< version::patch() << std::endl;
+    std::cout << "saam version:" << version::major() << '.' << version::minor() << '.' << version::patch() << std::endl;
     return 0;
 }
