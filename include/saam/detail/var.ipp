@@ -196,14 +196,16 @@ var<T, TBorrowManager>::~var()
     // It is a great place to revoke callbacks that contain self references.
     if constexpr (has_pre_destructor<T>)
     {
+        static_assert(has_noexcept_pre_destructor<T>, "pre_destructor() must be noexcept");
         instance_.pre_destructor();
     }
 
     // Before destroying the owned object, we need to check if there are any active references
     // The desctruction of the owned object cannot be done before the reference check,
     // because it would allow a data race between a thread inside the owned object and the destructor of the owned object.
-    if constexpr (can_check_dangling_references<TBorrowManager>)
+    if constexpr (has_verify_dangling_references<TBorrowManager>)
     {
+        static_assert(has_noexcept_verify_dangling_references<TBorrowManager>, "verify_dangling_references() must be noexcept");
         borrow_manager_.verify_dangling_references(typeid(T), this);
     }
 }
@@ -247,6 +249,7 @@ void var<T, TBorrowManager>::call_post_constructor() noexcept
 {
     if constexpr (has_post_constructor<T, TBorrowManager>)
     {
+        static_assert(has_noexcept_post_constructor<T, TBorrowManager>, "post_constructor() must be noexcept");
         if constexpr (std::is_same_v<TBorrowManager, unchecked_borrow_manager>)
         {
             instance_.post_constructor(ref<T, TBorrowManager>{instance_, nullptr});
@@ -263,6 +266,7 @@ void var<T, TBorrowManager>::call_post_assignment() noexcept
 {
     if constexpr (has_post_assignment<T, TBorrowManager>)
     {
+        static_assert(has_noexcept_post_assignment<T, TBorrowManager>, "post_assignment() must be noexcept");
         if constexpr (std::is_same_v<TBorrowManager, unchecked_borrow_manager>)
         {
             instance_.post_assignment(ref<T, TBorrowManager>{instance_, nullptr});

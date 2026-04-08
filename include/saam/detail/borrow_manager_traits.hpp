@@ -32,7 +32,12 @@ template <typename T>
 concept underlying_type = forward_declared<T> || std::is_const_v<T> || nothrow_movable<T>;
 
 template <typename TBorrowManager>
-concept can_check_dangling_references = requires(TBorrowManager instance) {
+concept has_verify_dangling_references = requires(TBorrowManager instance) {
+    instance.verify_dangling_references(typeid(int), nullptr);
+};
+
+template <typename TBorrowManager>
+concept has_noexcept_verify_dangling_references = requires(TBorrowManager instance) {
     { instance.verify_dangling_references(typeid(int), nullptr) } noexcept;
 };
 

@@ -47,7 +47,7 @@ class best_practice
     {
     }
 
-    void post_constructor(saam::ref<best_practice> self)
+    void post_constructor(saam::ref<best_practice> self) noexcept
     {
         self_ = std::move(self);
     }
@@ -76,7 +76,7 @@ class best_practice
         return external_callback;
     }
 
-    void pre_destructor()
+    void pre_destructor() noexcept
     {
         // Reset the smart self reference, so that no reference to the object is alive before the destructor is called.
         self_.reset();
