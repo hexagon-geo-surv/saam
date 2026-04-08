@@ -66,7 +66,7 @@ Advantages of smart references over raw references:
 - A class that owns `saam::ref`s can be copy/move assigned due to reassignability of the smart reference - unlike raw references.
 
 There is an exception to the forever validity of the smart reference: when the reference is in a "moved from" state. 
-It shall be not deferenced, but can be safely destroyed or re-assigned and used again.
+It shall be not dereferenced, but can be safely destroyed or re-assigned and used again.
 An attempt to dereference an "moved from" smart reference causes a nullptr access, which is still better than accessing a stale address - like for a raw reference.
 
 ## Smart variables on the heap
