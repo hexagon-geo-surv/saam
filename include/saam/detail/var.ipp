@@ -150,7 +150,7 @@ var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(const ref<T, TBorrowMa
     // Self assignment check is done in the delegated operator=
 
     // Only the instance shall be assigned, reference management of "this" and "other" are independent
-    operator=(*other.instance_);
+    operator=(*other);
 
     return *this;
 }
@@ -162,7 +162,7 @@ var<T, TBorrowManager> &var<T, TBorrowManager>::operator=(const ref<T, TOtherBor
     // Self assignment check is done in the delegated operator=
 
     // Only the instance shall be assigned, reference management of "this" and "other" are independent
-    operator=(*other.instance_);
+    operator=(*other);
 
     return *this;
 }

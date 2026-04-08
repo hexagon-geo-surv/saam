@@ -2,11 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
-
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
-from conan.tools.files import copy
 from conan.tools.scm import Version
 
 
